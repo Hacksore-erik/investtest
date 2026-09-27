@@ -1,0 +1,1703 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Компас — Инвестиционный навигатор</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  :root {
+    --bg-deep: #08090C;
+    --bg-card: rgba(32, 34, 42, 0.55);
+    --bg-card-hover: rgba(44, 47, 58, 0.68);
+    --border-subtle: rgba(255, 255, 255, 0.08);
+    --border-medium: rgba(255, 255, 255, 0.14);
+    --text-primary: #F5F5F7;
+    --text-secondary: rgba(245, 245, 247, 0.62);
+    --text-tertiary: rgba(245, 245, 247, 0.38);
+    --accent-blue: #5B9CFF;
+    --accent-blue-soft: rgba(91, 156, 255, 0.14);
+    --accent-teal: #4DD4C4;
+    --accent-green: #4ADE80;
+    --accent-green-soft: rgba(74, 222, 128, 0.12);
+    --accent-red: #F87171;
+    --accent-red-soft: rgba(248, 113, 113, 0.12);
+    --accent-yellow: #FBBF24;
+    --accent-yellow-soft: rgba(251, 191, 36, 0.12);
+    --accent-purple: #A78BFA;
+    --accent-purple-soft: rgba(167, 139, 250, 0.12);
+    --blur-strength: 40px;
+    --radius-lg: 22px;
+    --radius-md: 16px;
+    --radius-sm: 12px;
+  }
+
+  html, body {
+    background: var(--bg-deep);
+    color: var(--text-primary);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif;
+    font-feature-settings: "ss01", "cv01", "tnum";
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+    min-height: 100vh;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 55% at 15% 0%, rgba(91, 156, 255, 0.16), transparent 62%),
+      radial-gradient(ellipse 70% 55% at 95% 25%, rgba(167, 139, 250, 0.12), transparent 62%),
+      radial-gradient(ellipse 60% 45% at 50% 105%, rgba(77, 212, 196, 0.08), transparent 62%);
+    z-index: -2;
+    pointer-events: none;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+    z-index: -1;
+    pointer-events: none;
+    opacity: 0.6;
+  }
+
+  .phone {
+    max-width: 430px;
+    margin: 0 auto;
+    min-height: 100vh;
+    position: relative;
+    padding-bottom: 110px;
+  }
+
+  /* Status bar */
+  .status-bar {
+    position: sticky;
+    top: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 28px 8px;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    z-index: 100;
+    background: linear-gradient(180deg, rgba(8, 9, 12, 0.9) 0%, rgba(8, 9, 12, 0) 100%);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+
+  .status-bar .time { font-variant-numeric: tabular-nums; }
+  .status-bar .icons { display: flex; gap: 6px; align-items: center; }
+  .status-bar .icons svg { width: 17px; height: 11px; }
+
+  /* Header */
+  .header { padding: 8px 24px 20px; }
+
+  .header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+  }
+
+  .header h1 {
+    font-size: 34px;
+    font-weight: 700;
+    letter-spacing: -0.028em;
+    background: linear-gradient(135deg, #FFFFFF 0%, rgba(255,255,255,0.68) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .header .avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent-blue), #3A6FD8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    font-weight: 700;
+    color: #FFFFFF;
+    box-shadow: 0 4px 16px rgba(91, 156, 255, 0.32);
+    cursor: pointer;
+    transition: transform 0.2s;
+  }
+
+  .header .avatar:active { transform: scale(0.92); }
+
+  .header .subtitle {
+    font-size: 15px;
+    color: var(--text-secondary);
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
+
+  /* Cards */
+  .card {
+    background: var(--bg-card);
+    backdrop-filter: blur(var(--blur-strength)) saturate(180%);
+    -webkit-backdrop-filter: blur(var(--blur-strength)) saturate(180%);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    margin: 0 16px 14px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: var(--radius-lg);
+    padding: 1px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.02));
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  /* Goal hero */
+  .goal-hero {
+    padding: 26px 24px;
+    background: linear-gradient(160deg, rgba(91, 156, 255, 0.14) 0%, rgba(32, 34, 42, 0.55) 65%);
+  }
+
+  .goal-label {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    color: var(--accent-blue);
+    margin-bottom: 14px;
+  }
+
+  .goal-amount {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    margin-bottom: 4px;
+  }
+
+  .goal-amount .num {
+    font-size: 46px;
+    font-weight: 700;
+    letter-spacing: -0.04em;
+    font-variant-numeric: tabular-nums;
+    background: linear-gradient(135deg, #FFFFFF, rgba(255,255,255,0.72));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1;
+  }
+
+  .goal-amount .currency {
+    font-size: 26px;
+    font-weight: 600;
+    color: var(--text-secondary);
+  }
+
+  .goal-deadline {
+    font-size: 15px;
+    color: var(--text-secondary);
+    font-weight: 500;
+    margin-bottom: 22px;
+  }
+
+  .goal-progress-track {
+    height: 8px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 10px;
+  }
+
+  .goal-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-blue), var(--accent-teal));
+    border-radius: 4px;
+    box-shadow: 0 0 12px rgba(91, 156, 255, 0.5);
+    transition: width 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+
+  .goal-stats {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-tertiary);
+    margin-bottom: 20px;
+  }
+
+  .goal-stats .now { color: var(--text-primary); font-weight: 600; }
+
+  .goal-meta-row {
+    display: flex;
+    gap: 10px;
+    padding-top: 18px;
+    border-top: 1px solid var(--border-subtle);
+  }
+
+  .goal-meta-item { flex: 1; }
+
+  .goal-meta-item .label {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    font-weight: 500;
+    margin-bottom: 4px;
+  }
+
+  .goal-meta-item .value {
+    font-size: 16px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+  }
+
+  /* Reality */
+  .reality-card {
+    padding: 22px 24px;
+    background: linear-gradient(160deg, rgba(251, 191, 36, 0.10) 0%, rgba(32, 34, 42, 0.55) 65%);
+  }
+
+  .reality-title {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    color: var(--accent-yellow);
+    margin-bottom: 16px;
+  }
+
+  .reality-line {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 6px 0;
+    font-size: 15px;
+  }
+
+  .reality-line .lbl { color: var(--text-secondary); font-weight: 500; }
+  .reality-line .val { font-weight: 600; font-variant-numeric: tabular-nums; }
+  .reality-line .val.green { color: var(--accent-green); }
+  .reality-line .val.red { color: var(--accent-red); }
+  .reality-line .val.yellow { color: var(--accent-yellow); }
+
+  .reality-divider { height: 1px; background: var(--border-subtle); margin: 14px 0; }
+
+  .reality-options { display: flex; flex-direction: column; gap: 10px; }
+
+  .reality-option {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    background: rgba(255,255,255,0.04);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-subtle);
+  }
+
+  .reality-option .arrow { color: var(--accent-blue); font-size: 15px; font-weight: 700; flex-shrink: 0; }
+  .reality-option .text { font-size: 14px; font-weight: 500; color: var(--text-primary); line-height: 1.35; }
+
+  /* Today */
+  .today-card {
+    padding: 22px 24px;
+    background: linear-gradient(160deg, rgba(74, 222, 128, 0.10) 0%, rgba(32, 34, 42, 0.55) 65%);
+  }
+
+  .today-top { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+
+  .today-badge {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent-green);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .today-badge .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--accent-green);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.5); }
+    70% { box-shadow: 0 0 0 10px rgba(74, 222, 128, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0); }
+  }
+
+  .today-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 6px 0;
+    font-size: 15px;
+  }
+
+  .today-row .lbl { color: var(--text-secondary); font-weight: 500; }
+  .today-row .val { font-weight: 600; font-variant-numeric: tabular-nums; }
+  .today-row .val.green { color: var(--accent-green); }
+  .today-row .val.red { color: var(--accent-red); }
+
+  .today-cta {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 16px;
+    padding: 14px 18px;
+    background: rgba(91, 156, 255, 0.14);
+    border: 1px solid rgba(91, 156, 255, 0.24);
+    border-radius: var(--radius-md);
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--accent-blue);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .today-cta:active { transform: scale(0.98); background: rgba(91, 156, 255, 0.20); }
+
+  /* Section header */
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 24px 24px 12px;
+  }
+
+  .section-header h2 {
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.022em;
+  }
+
+  .section-header .action {
+    font-size: 15px;
+    color: var(--accent-blue);
+    font-weight: 500;
+    cursor: pointer;
+  }
+
+  .section-header .action:active { opacity: 0.6; }
+
+  /* Scenario */
+  .scenario-card {
+    padding: 18px 20px;
+    background: var(--bg-card);
+    backdrop-filter: blur(var(--blur-strength)) saturate(180%);
+    -webkit-backdrop-filter: blur(var(--blur-strength)) saturate(180%);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    margin: 0 16px 10px;
+    cursor: pointer;
+    transition: all 0.25s;
+  }
+
+  .scenario-card:active { transform: scale(0.985); background: var(--bg-card-hover); }
+
+  .scenario-card.active {
+    border-color: rgba(91, 156, 255, 0.4);
+    background: linear-gradient(160deg, rgba(91, 156, 255, 0.12) 0%, rgba(32, 34, 42, 0.55) 70%);
+  }
+
+  .scenario-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+  }
+
+  .scenario-name {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+  }
+
+  .scenario-card.active .scenario-name { color: var(--accent-blue); }
+
+  .scenario-check {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 1.5px solid var(--border-medium);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: transparent;
+    transition: all 0.2s;
+  }
+
+  .scenario-card.active .scenario-check {
+    background: var(--accent-blue);
+    border-color: var(--accent-blue);
+    color: white;
+  }
+
+  .scenario-desc {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    letter-spacing: -0.01em;
+  }
+
+  .scenario-result {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: 14px;
+    padding: 4px 0;
+  }
+
+  .scenario-result .lbl { color: var(--text-tertiary); font-weight: 500; }
+  .scenario-result .val { font-weight: 600; font-variant-numeric: tabular-nums; }
+  .scenario-result .val.green { color: var(--accent-green); }
+  .scenario-result .val.yellow { color: var(--accent-yellow); }
+  .scenario-result .val.red { color: var(--accent-red); }
+
+  /* Position */
+  .position-card {
+    padding: 16px 18px;
+    background: var(--bg-card);
+    backdrop-filter: blur(var(--blur-strength)) saturate(180%);
+    -webkit-backdrop-filter: blur(var(--blur-strength)) saturate(180%);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    margin: 0 16px 8px;
+    cursor: pointer;
+    transition: all 0.25s;
+  }
+
+  .position-card:active { transform: scale(0.985); background: var(--bg-card-hover); }
+
+  .position-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .position-ticker {
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+  }
+
+  .position-share {
+    margin-left: auto;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .position-bar {
+    height: 3px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 10px;
+  }
+
+  .position-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+  }
+
+  .position-bar-fill.green { background: linear-gradient(90deg, var(--accent-green), #22C55E); }
+  .position-bar-fill.yellow { background: linear-gradient(90deg, var(--accent-yellow), #F59E0B); }
+  .position-bar-fill.red { background: linear-gradient(90deg, var(--accent-red), #EF4444); }
+  .position-bar-fill.blue { background: linear-gradient(90deg, var(--accent-blue), var(--accent-teal)); }
+
+  .position-note {
+    font-size: 13px;
+    color: var(--text-tertiary);
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .position-note.warn { color: var(--accent-yellow); }
+  .position-note.danger { color: var(--accent-red); }
+
+  /* What if */
+  .whatif-card {
+    padding: 22px 24px;
+    background: linear-gradient(160deg, rgba(167, 139, 250, 0.10) 0%, rgba(32, 34, 42, 0.55) 65%);
+  }
+
+  .whatif-title {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    color: var(--accent-purple);
+    margin-bottom: 16px;
+  }
+
+  .whatif-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .whatif-row:last-child { border-bottom: none; padding-bottom: 0; }
+  .whatif-row:first-of-type { padding-top: 0; }
+
+  .whatif-action {
+    font-size: 14px;
+    color: var(--text-secondary);
+    font-weight: 500;
+    line-height: 1.4;
+    flex: 1;
+  }
+
+  .whatif-effect {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--accent-green);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  /* Insight */
+  .insight-card {
+    padding: 22px 24px;
+    background: linear-gradient(160deg, rgba(77, 212, 196, 0.10) 0%, rgba(32, 34, 42, 0.55) 65%);
+  }
+
+  .insight-label {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    color: var(--accent-teal);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .insight-text {
+    font-size: 16px;
+    line-height: 1.5;
+    color: var(--text-primary);
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
+
+  .insight-highlight { color: var(--accent-teal); font-weight: 600; }
+
+  /* Mirror */
+  .mirror-card {
+    padding: 22px 24px;
+    background: var(--bg-card);
+    backdrop-filter: blur(var(--blur-strength)) saturate(180%);
+    -webkit-backdrop-filter: blur(var(--blur-strength)) saturate(180%);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    margin: 0 16px 14px;
+  }
+
+  .mirror-title {
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    margin-bottom: 16px;
+    line-height: 1.35;
+  }
+
+  .mirror-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 7px 0;
+    font-size: 14px;
+  }
+
+  .mirror-row .lbl { color: var(--text-secondary); font-weight: 500; }
+  .mirror-row .val { font-weight: 600; font-variant-numeric: tabular-nums; }
+  .mirror-row .val.green { color: var(--accent-green); }
+  .mirror-row .val.red { color: var(--accent-red); }
+  .mirror-row .val.yellow { color: var(--accent-yellow); }
+
+  .mirror-footer {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-subtle);
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    font-weight: 500;
+  }
+
+  .mirror-footer .hl { color: var(--text-primary); font-weight: 600; }
+
+  .mirror-cta {
+    margin-top: 14px;
+    padding: 12px 16px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    text-align: center;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--accent-blue);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .mirror-cta:active { background: rgba(255,255,255,0.09); }
+
+  /* Journal */
+  .journal-item {
+    padding: 18px 20px;
+    background: var(--bg-card);
+    backdrop-filter: blur(var(--blur-strength)) saturate(180%);
+    -webkit-backdrop-filter: blur(var(--blur-strength)) saturate(180%);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    margin: 0 16px 10px;
+    cursor: pointer;
+    transition: all 0.25s;
+  }
+
+  .journal-item:active { transform: scale(0.985); background: var(--bg-card-hover); }
+
+  .journal-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+
+  .journal-type {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+  }
+
+  .journal-date {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .journal-title {
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 10px;
+    letter-spacing: -0.01em;
+  }
+
+  .journal-block {
+    padding: 10px 12px;
+    background: rgba(255,255,255,0.03);
+    border-radius: var(--radius-sm);
+    margin-bottom: 8px;
+  }
+
+  .journal-block:last-child { margin-bottom: 0; }
+
+  .journal-block .lbl {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+    margin-bottom: 4px;
+  }
+
+  .journal-block .txt {
+    font-size: 13px;
+    color: var(--text-primary);
+    font-weight: 500;
+    line-height: 1.45;
+  }
+
+  .journal-block .txt.green { color: var(--accent-green); }
+  .journal-block .txt.red { color: var(--accent-red); }
+  .journal-block .txt.yellow { color: var(--accent-yellow); }
+
+  /* Quality */
+  .quality-card {
+    padding: 22px 24px;
+    background: linear-gradient(160deg, rgba(91, 156, 255, 0.10) 0%, rgba(32, 34, 42, 0.55) 65%);
+  }
+
+  .quality-title {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    color: var(--accent-blue);
+    margin-bottom: 16px;
+  }
+
+  .quality-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 7px 0;
+    font-size: 14px;
+  }
+
+  .quality-row .lbl { color: var(--text-secondary); font-weight: 500; }
+  .quality-row .val { font-weight: 600; font-variant-numeric: tabular-nums; }
+  .quality-row .val.green { color: var(--accent-green); }
+  .quality-row .val.red { color: var(--accent-red); }
+
+  /* Tax */
+  .tax-card {
+    padding: 22px 24px;
+    background: linear-gradient(160deg, rgba(251, 191, 36, 0.10) 0%, rgba(32, 34, 42, 0.55) 65%);
+  }
+
+  .tax-title {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    color: var(--accent-yellow);
+    margin-bottom: 16px;
+  }
+
+  .tax-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 7px 0;
+    font-size: 14px;
+  }
+
+  .tax-row .lbl { color: var(--text-secondary); font-weight: 500; }
+  .tax-row .val { font-weight: 600; font-variant-numeric: tabular-nums; }
+
+  .tax-divider { height: 1px; background: var(--border-subtle); margin: 14px 0; }
+
+  .tax-scale {
+    font-size: 13px;
+    color: var(--text-tertiary);
+    font-weight: 500;
+    line-height: 1.7;
+  }
+
+  .bracket-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
+  }
+
+  .bracket-row.active {
+    color: var(--accent-yellow);
+    font-weight: 600;
+  }
+
+  .tax-note {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border-subtle);
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    font-weight: 500;
+  }
+
+  .tax-note .hl { color: var(--accent-yellow); font-weight: 700; }
+
+  /* Cost */
+  .cost-card {
+    padding: 22px 24px;
+    background: linear-gradient(160deg, rgba(248, 113, 113, 0.10) 0%, rgba(32, 34, 42, 0.55) 65%);
+  }
+
+  .cost-title {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    color: var(--accent-red);
+    margin-bottom: 16px;
+  }
+
+  .cost-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 7px 0;
+    font-size: 14px;
+  }
+
+  .cost-row .lbl { color: var(--text-secondary); font-weight: 500; }
+  .cost-row .val { font-weight: 600; font-variant-numeric: tabular-nums; }
+
+  .cost-total {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-subtle);
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+
+  .cost-total .lbl { font-size: 15px; font-weight: 600; }
+  .cost-total .val {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--accent-red);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+  }
+
+  /* Token input */
+  .token-input {
+    width: 100%;
+    padding: 14px 16px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid var(--border-medium);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+    margin-bottom: 10px;
+    transition: border-color 0.2s;
+  }
+
+  .token-input:focus { border-color: var(--accent-blue); }
+
+  .token-btn {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, var(--accent-blue), #3A6FD8);
+    border: none;
+    border-radius: var(--radius-sm);
+    color: #FFF;
+    font-size: 15px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 6px 20px rgba(91,156,255,0.28);
+  }
+
+  .token-btn:active { transform: scale(0.98); }
+  .token-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .token-status {
+    padding: 12px 16px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: 10px;
+    display: none;
+  }
+
+  .token-status.error {
+    display: block;
+    background: var(--accent-red-soft);
+    color: var(--accent-red);
+    border: 1px solid rgba(248,113,113,0.24);
+  }
+
+  .token-status.loading {
+    display: block;
+    background: var(--accent-blue-soft);
+    color: var(--accent-blue);
+    border: 1px solid rgba(91,156,255,0.24);
+  }
+
+  .token-status.ok {
+    display: block;
+    background: var(--accent-green-soft);
+    color: var(--accent-green);
+    border: 1px solid rgba(74,222,128,0.24);
+  }
+
+  .token-hint {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    line-height: 1.5;
+    margin-top: 10px;
+  }
+
+  .token-hint a { color: var(--accent-blue); text-decoration: none; }
+
+  /* Tab bar */
+  .tab-bar {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 430px;
+    padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
+    background: rgba(16, 17, 22, 0.72);
+    backdrop-filter: blur(40px) saturate(180%);
+    -webkit-backdrop-filter: blur(40px) saturate(180%);
+    border-top: 1px solid var(--border-subtle);
+    display: flex;
+    justify-content: space-around;
+    z-index: 200;
+  }
+
+  .tab {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    padding: 6px 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border-radius: 10px;
+    flex: 1;
+    border: none;
+    background: none;
+    font-family: inherit;
+  }
+
+  .tab:active { opacity: 0.6; }
+
+  .tab .tab-icon {
+    font-size: 20px;
+    line-height: 1;
+    filter: grayscale(1) opacity(0.5);
+    transition: filter 0.2s;
+  }
+
+  .tab.active .tab-icon { filter: none; }
+
+  .tab .tab-label {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-tertiary);
+    letter-spacing: 0.01em;
+    transition: color 0.2s;
+  }
+
+  .tab.active .tab-label { color: var(--accent-blue); }
+
+  .home-indicator {
+    position: fixed;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 134px;
+    height: 5px;
+    border-radius: 3px;
+    background: rgba(255,255,255,0.25);
+    z-index: 300;
+    pointer-events: none;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .fade-up { animation: fadeUp 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) backwards; }
+  .fade-up:nth-child(1) { animation-delay: 0.02s; }
+  .fade-up:nth-child(2) { animation-delay: 0.06s; }
+  .fade-up:nth-child(3) { animation-delay: 0.10s; }
+  .fade-up:nth-child(4) { animation-delay: 0.14s; }
+  .fade-up:nth-child(5) { animation-delay: 0.18s; }
+  .fade-up:nth-child(6) { animation-delay: 0.22s; }
+  .fade-up:nth-child(7) { animation-delay: 0.26s; }
+  .fade-up:nth-child(8) { animation-delay: 0.30s; }
+
+  ::-webkit-scrollbar { display: none; }
+  .tappable { -webkit-user-select: none; user-select: none; }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  .hint-bar {
+    margin: 0 16px 14px;
+    padding: 14px 18px;
+    background: linear-gradient(135deg, rgba(91, 156, 255, 0.16), rgba(91, 156, 255, 0.06));
+    border: 1px solid rgba(91, 156, 255, 0.22);
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .hint-bar .icon { font-size: 20px; flex-shrink: 0; }
+
+  .hint-bar .text {
+    font-size: 13px;
+    color: var(--text-secondary);
+    font-weight: 500;
+    line-height: 1.4;
+    flex: 1;
+  }
+
+  .hint-bar .text .hl { color: var(--accent-blue); font-weight: 600; }
+</style>
+</head>
+<body>
+
+<div class="phone">
+
+  <!-- Status bar -->
+  <div class="status-bar">
+    <span class="time" id="clock">9:41</span>
+    <div class="icons">
+      <svg viewBox="0 0 17 11" fill="currentColor"><path d="M1.5 4.5h2v5h-2zM5 3h2v6.5H5zM8.5 1.5h2V9.5h-2zM12 0h2v9.5h-2z"/></svg>
+      <svg viewBox="0 0 16 11" fill="currentColor"><path d="M8 2.5c1.8 0 3.4.7 4.6 1.9l1.1-1.1C12.1 1.7 10.1.8 8 .8S3.9 1.7 2.3 3.3l1.1 1.1C4.6 3.2 6.2 2.5 8 2.5zM8 5.5c1 0 1.9.4 2.6 1.1l1.1-1.1C10.9 4.7 9.5 4.1 8 4.1s-2.9.6-3.7 1.4l1.1 1.1C6.1 5.9 7 5.5 8 5.5zM8 8.5c.4 0 .7.1 1 .4l-1 1-1-1c.3-.3.6-.4 1-.4z"/></svg>
+      <svg viewBox="0 0 25 11" fill="none" stroke="currentColor"><rect x="0.5" y="0.5" width="21" height="10" rx="3" opacity="0.4"/><rect x="2" y="2" width="18" height="7" rx="1.5" fill="currentColor"/><path d="M23 4v3a1.5 1.5 0 000-3z" fill="currentColor" opacity="0.4"/></svg>
+    </div>
+  </div>
+
+  <!-- ============ TAB 1: ПУТЬ ============ -->
+  <div class="tab-content active" id="tab-1">
+    <div class="header fade-up">
+      <div class="header-top">
+        <h1>Путь</h1>
+        <div class="avatar" onclick="switchTab(5)">АК</div>
+      </div>
+      <div class="subtitle">Не запрещай себе. Веди себя к цели</div>
+    </div>
+
+    <div class="card goal-hero fade-up">
+      <div class="goal-label">Цель</div>
+      <div class="goal-amount">
+        <div class="num" id="goalAmount">1 000 000</div>
+        <div class="currency">₽</div>
+      </div>
+      <div class="goal-deadline">к 31 декабря 2029</div>
+
+      <div class="goal-progress-track">
+        <div class="goal-progress-fill" id="goalProgress" style="width: 0%"></div>
+      </div>
+
+      <div class="goal-stats">
+        <span>Прогресс <span class="now" id="goalPercent">0%</span></span>
+        <span>Сейчас <span class="now" id="goalCurrent">— ₽</span></span>
+      </div>
+
+      <div class="goal-meta-row">
+        <div class="goal-meta-item">
+          <div class="label">Осталось</div>
+          <div class="value" id="goalRemaining">— ₽</div>
+        </div>
+        <div class="goal-meta-item">
+          <div class="label">Времени</div>
+          <div class="value">3 г. 3 мес.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card reality-card fade-up">
+      <div class="reality-title">При текущей стратегии</div>
+      <div class="reality-line">
+        <span class="lbl">Дойдёшь до</span>
+        <span class="val yellow" id="realityReach">— ₽</span>
+      </div>
+      <div class="reality-line">
+        <span class="lbl">Не хватит</span>
+        <span class="val red" id="realityGap">— ₽</span>
+      </div>
+      <div class="reality-divider"></div>
+      <div style="font-size: 13px; color: var(--text-tertiary); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 12px;">Чтобы успеть</div>
+      <div class="reality-options">
+        <div class="reality-option"><span class="arrow">→</span><span class="text">+18% доходности в год</span></div>
+        <div class="reality-option"><span class="arrow">→</span><span class="text">+4 500 ₽ в месяц</span></div>
+        <div class="reality-option"><span class="arrow">→</span><span class="text">Продлить срок на 1 год 8 мес.</span></div>
+      </div>
+    </div>
+
+    <div class="card today-card fade-up">
+      <div class="today-top">
+        <div class="today-badge"><span class="dot"></span>Сегодня</div>
+      </div>
+      <div class="today-row">
+        <span class="lbl">Ты на пути</span>
+        <span class="val green">✓</span>
+      </div>
+      <div class="today-row">
+        <span class="lbl">Отклонение от плана</span>
+        <span class="val red">−2,4%</span>
+      </div>
+      <div class="today-row">
+        <span class="lbl">Стоимость для цели</span>
+        <span class="val red">47 200 ₽</span>
+      </div>
+      <div class="today-cta tappable" onclick="switchTab(3)">Что тебя сбивает →</div>
+    </div>
+
+    <div class="card insight-card fade-up">
+      <div class="insight-label"><span>💡</span><span>Инсайт дня</span></div>
+      <div class="insight-text">
+        За последние 30 дней ты открывал приложение брокера <span class="insight-highlight">47 раз</span>. Средний инвестор — 12. Больше проверок ≠ лучше результат.
+      </div>
+    </div>
+
+    <div class="section-header fade-up">
+      <h2>Сценарии</h2>
+      <span class="action tappable">Все</span>
+    </div>
+
+    <div class="scenario-card active tappable fade-up" onclick="selectScenario(this)">
+      <div class="scenario-head">
+        <div class="scenario-name">Базовый</div>
+        <div class="scenario-check">✓</div>
+      </div>
+      <div class="scenario-desc">Индекс + 5% в год</div>
+      <div class="scenario-result">
+        <span class="lbl">К сроку</span>
+        <span class="val green">720 000 ₽</span>
+      </div>
+    </div>
+
+    <div class="scenario-card tappable fade-up" onclick="selectScenario(this)">
+      <div class="scenario-head">
+        <div class="scenario-name">Осторожный</div>
+        <div class="scenario-check">✓</div>
+      </div>
+      <div class="scenario-desc">ОФЗ + вклады</div>
+      <div class="scenario-result">
+        <span class="lbl">К сроку</span>
+        <span class="val yellow">580 000 ₽</span>
+      </div>
+    </div>
+
+    <div class="scenario-card tappable fade-up" onclick="selectScenario(this)">
+      <div class="scenario-head">
+        <div class="scenario-name">Агрессивный</div>
+        <div class="scenario-check">✓</div>
+      </div>
+      <div class="scenario-desc">Дивидендные акции + фонды</div>
+      <div class="scenario-result">
+        <span class="lbl">К сроку</span>
+        <span class="val green">890 000 ₽</span>
+      </div>
+      <div class="scenario-result">
+        <span class="lbl">Риск просадки</span>
+        <span class="val red">до −35% в год</span>
+      </div>
+    </div>
+
+    <div style="height: 40px;"></div>
+  </div>
+
+  <!-- ============ TAB 2: ПОРТФЕЛЬ ============ -->
+  <div class="tab-content" id="tab-2">
+    <div class="header fade-up">
+      <div class="header-top">
+        <h1>Портфель</h1>
+        <div class="avatar" onclick="switchTab(5)">АК</div>
+      </div>
+      <div class="subtitle" id="portfolioSubtitle">Подключи токен, чтобы увидеть свой портфель</div>
+    </div>
+
+    <!-- Token input -->
+    <div class="card fade-up" style="padding: 20px;">
+      <div style="font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-tertiary); margin-bottom: 12px;">Подключение Т-Инвестиций</div>
+
+      <input type="password" id="tokenInput" class="token-input" placeholder="t.xxxxxxxxxxxxxxxxxxxxxxxx" autocomplete="off">
+
+      <div id="tokenStatus" class="token-status"></div>
+
+      <button class="token-btn" id="loadBtn" onclick="loadPortfolio()">Загрузить портфель</button>
+
+      <div class="token-hint">
+        Read-only токен. Не даёт торговать. Выпусти в <a href="https://www.tbank.ru/invest/settings/" target="_blank">веб-версии Т-Инвестиций → Настройки → Токены</a>.
+      </div>
+    </div>
+
+    <!-- Portfolio summary (hidden until loaded) -->
+    <div id="portfolioSummary" style="display: none;">
+      <div class="card fade-up" style="padding: 22px 24px;">
+        <div class="reality-line">
+          <span class="lbl">Общая стоимость</span>
+          <span class="val" style="font-size: 18px;" id="totalValue">—</span>
+        </div>
+        <div class="reality-line">
+          <span class="lbl">Позиций</span>
+          <span class="val" id="positionsCount">—</span>
+        </div>
+        <div class="reality-line">
+          <span class="lbl">Счёт</span>
+          <span class="val" id="accountName">—</span>
+        </div>
+      </div>
+
+      <div class="section-header fade-up">
+        <h2>Позиции</h2>
+      </div>
+
+      <div id="positionsList"></div>
+
+      <div class="card whatif-card fade-up">
+        <div class="whatif-title">Что если</div>
+        <div class="whatif-row">
+          <div class="whatif-action">Уменьшил крупнейшую позицию до 15%</div>
+          <div class="whatif-effect" id="whatif1">— ₽</div>
+        </div>
+        <div class="whatif-row">
+          <div class="whatif-action">Перевёл всё в индекс MCFTR</div>
+          <div class="whatif-effect" id="whatif2">— ₽</div>
+        </div>
+        <div class="whatif-row">
+          <div class="whatif-action">Не совершал лишние сделки</div>
+          <div class="whatif-effect">+32 000 ₽</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="height: 40px;"></div>
+  </div>
+
+  <!-- ============ TAB 3: ЗЕРКАЛО ============ -->
+  <div class="tab-content" id="tab-3">
+    <div class="header fade-up">
+      <div class="header-top">
+        <h1>Зеркало</h1>
+        <div class="avatar" onclick="switchTab(5)">АК</div>
+      </div>
+      <div class="subtitle">Честная картина твоего поведения</div>
+    </div>
+
+    <div class="hint-bar fade-up">
+      <div class="icon">🪞</div>
+      <div class="text">Это <span class="hl">не обвинения</span>. Это закономерности, которые стоят тебе денег и времени.</div>
+    </div>
+
+    <div class="mirror-card fade-up">
+      <div class="mirror-title">Ты рано фиксируешь прибыль и долго держишь убытки</div>
+      <div class="mirror-row"><span class="lbl">Средняя прибыль</span><span class="val green">+8,4%</span></div>
+      <div class="mirror-row"><span class="lbl">Средний убыток</span><span class="val red">−14,1%</span></div>
+      <div class="mirror-footer">Стоимость для цели: <span class="hl">≈ 47 200 ₽</span></div>
+      <div class="mirror-cta tappable">Показать 12 примеров →</div>
+    </div>
+
+    <div class="mirror-card fade-up">
+      <div class="mirror-title">Ты слишком много торгуешь</div>
+      <div class="mirror-row"><span class="lbl">Сделок за квартал</span><span class="val">84</span></div>
+      <div class="mirror-row"><span class="lbl">Средний результат</span><span class="val">+0,2%</span></div>
+      <div class="mirror-footer">Если бы ты сделал 20 сделок — результат был бы <span class="hl">+3,1%</span>.<br>Стоимость: <span class="hl">≈ 32 000 ₽</span></div>
+      <div class="mirror-cta tappable">Какие сделки были лишними →</div>
+    </div>
+
+    <div class="mirror-card fade-up">
+      <div class="mirror-title">Ты держишь яйца в двух корзинах</div>
+      <div class="mirror-row"><span class="lbl">Топ-2 бумаги</span><span class="val yellow">36% портфеля</span></div>
+      <div class="mirror-row"><span class="lbl">Топ-5 бумаг</span><span class="val">71% портфеля</span></div>
+      <div class="mirror-footer">При просадке одной бумаги на 30%:<br>Потеря: <span class="hl">−124 000 ₽</span> · Влияние на цель: <span class="hl">−6 мес. срока</span></div>
+      <div class="mirror-cta tappable">Симуляция «что если» →</div>
+    </div>
+
+    <div class="mirror-card fade-up">
+      <div class="mirror-title">Ты чаще проверяешь портфель, когда он падает</div>
+      <div class="mirror-row"><span class="lbl">Проверок в дни роста</span><span class="val">12 раз</span></div>
+      <div class="mirror-row"><span class="lbl">Проверок в дни падения</span><span class="val red">47 раз</span></div>
+      <div class="mirror-footer">Твои сделки в дни частых проверок дали <span class="hl">−0,8%</span>.<br>В спокойные дни: <span class="hl">+2,1%</span>.</div>
+    </div>
+
+    <div style="height: 40px;"></div>
+  </div>
+
+  <!-- ============ TAB 4: ЖУРНАЛ ============ -->
+  <div class="tab-content" id="tab-4">
+    <div class="header fade-up">
+      <div class="header-top">
+        <h1>Журнал</h1>
+        <div class="avatar" onclick="switchTab(5)">АК</div>
+      </div>
+      <div class="subtitle">Дневник решений · не список сделок</div>
+    </div>
+
+    <div class="card quality-card fade-up">
+      <div class="quality-title">Качество решений за год</div>
+      <div class="quality-row"><span class="lbl">Сделок с тезисом</span><span class="val">34 из 156</span></div>
+      <div class="quality-row"><span class="lbl">Тезисов подтвердилось</span><span class="val green">61%</span></div>
+      <div class="quality-row"><span class="lbl">Результат с тезисом</span><span class="val green">+4,8%</span></div>
+      <div class="quality-row"><span class="lbl">Результат без тезиса</span><span class="val red">−1,2%</span></div>
+    </div>
+
+    <div class="section-header fade-up">
+      <h2>Записи</h2>
+      <span class="action tappable">Все</span>
+    </div>
+
+    <div class="journal-item tappable fade-up">
+      <div class="journal-head">
+        <div class="journal-type">Покупка</div>
+        <div class="journal-date">12.09.2026</div>
+      </div>
+      <div class="journal-title">GAZP × 200</div>
+      <div class="journal-block">
+        <div class="lbl">Тезис</div>
+        <div class="txt">Ставка на дивиденды + рост газа</div>
+      </div>
+      <div class="journal-block">
+        <div class="lbl">Ожидание</div>
+        <div class="txt">Дивиденды 12% в год, горизонт 12 мес.</div>
+      </div>
+      <div class="journal-block">
+        <div class="lbl">Спустя 45 дней</div>
+        <div class="txt green">Цена −4,2% · Тезис подтверждается</div>
+      </div>
+    </div>
+
+    <div class="journal-item tappable fade-up">
+      <div class="journal-head">
+        <div class="journal-type">Продажа</div>
+        <div class="journal-date">28.08.2026</div>
+      </div>
+      <div class="journal-title">YNDX — вся позиция</div>
+      <div class="journal-block">
+        <div class="lbl">Тезис</div>
+        <div class="txt">Переоценён, жду коррекции</div>
+      </div>
+      <div class="journal-block">
+        <div class="lbl">Ожидание</div>
+        <div class="txt">Падение на 15% за 3 месяца</div>
+      </div>
+      <div class="journal-block">
+        <div class="lbl">Результат</div>
+        <div class="txt red">Бумага выросла на 8%. Тезис не подтвердился</div>
+      </div>
+    </div>
+
+    <div class="journal-item tappable fade-up">
+      <div class="journal-head">
+        <div class="journal-type">Покупка</div>
+        <div class="journal-date">15.07.2026</div>
+      </div>
+      <div class="journal-title">LKOH × 10</div>
+      <div class="journal-block">
+        <div class="lbl">Тезис</div>
+        <div class="txt">Ставка на дивидендный поток</div>
+      </div>
+      <div class="journal-block">
+        <div class="lbl">Спустя 75 дней</div>
+        <div class="txt green">Цена +6,8% · Тезис подтверждается</div>
+      </div>
+    </div>
+
+    <div style="height: 40px;"></div>
+  </div>
+
+  <!-- ============ TAB 5: Я ============ -->
+  <div class="tab-content" id="tab-5">
+    <div class="header fade-up">
+      <div class="header-top">
+        <h1>Я</h1>
+        <div class="avatar">АК</div>
+      </div>
+      <div class="subtitle">Налоги, цели, настройки</div>
+    </div>
+
+    <div class="card tax-card fade-up">
+      <div class="tax-title">Налоги 2026</div>
+      <div class="tax-row"><span class="lbl">Прогноз за год</span><span class="val">24 800 ₽</span></div>
+      <div class="tax-row"><span class="lbl">Уже начислено</span><span class="val">14 200 ₽</span></div>
+      <div class="tax-divider"></div>
+      <div style="font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-tertiary); margin-bottom: 10px;">Прогрессивная шкала</div>
+      <div class="tax-scale">
+        <div class="bracket-row"><span>до 2,4 млн</span><span>13%</span></div>
+        <div class="bracket-row active"><span>2,4–5 млн</span><span>15%</span></div>
+        <div class="bracket-row"><span>5–20 млн</span><span>18%</span></div>
+      </div>
+      <div class="tax-note">
+        Ты близко к порогу 15%.<br>
+        Продажа до конца года сэкономит <span class="hl">≈ 8 200 ₽</span>.
+      </div>
+    </div>
+
+    <div class="card cost-card fade-up">
+      <div class="cost-title">Цена твоих решений за год</div>
+      <div class="cost-row"><span class="lbl">Лишних сделок</span><span class="val">64</span></div>
+      <div class="cost-row"><span class="lbl">Комиссии</span><span class="val">6 400 ₽</span></div>
+      <div class="cost-row"><span class="lbl">Налог из-за сделок</span><span class="val">8 200 ₽</span></div>
+      <div class="cost-row"><span class="lbl">Упущено для цели</span><span class="val">≈ 32 000 ₽</span></div>
+      <div class="cost-total">
+        <span class="lbl">Итого — цена импульса</span>
+        <span class="val">46 600 ₽</span>
+      </div>
+    </div>
+
+    <div class="section-header fade-up">
+      <h2>Мои цели</h2>
+      <span class="action tappable">Добавить</span>
+    </div>
+
+    <div class="position-card tappable fade-up">
+      <div class="position-top">
+        <div class="position-ticker">🏠 Квартира</div>
+        <div class="position-share">41%</div>
+      </div>
+      <div class="position-bar"><div class="position-bar-fill green" style="width: 41%"></div></div>
+      <div class="position-note"><span>1 000 000 ₽ к 31.12.2029</span></div>
+    </div>
+
+    <div class="position-card tappable fade-up">
+      <div class="position-top">
+        <div class="position-ticker">🎓 Образование</div>
+        <div class="position-share">12%</div>
+      </div>
+      <div class="position-bar"><div class="position-bar-fill yellow" style="width: 12%"></div></div>
+      <div class="position-note warn"><span>600 000 ₽ к 01.09.2028 · отставание</span></div>
+    </div>
+
+    <div class="section-header fade-up">
+      <h2>Подключение</h2>
+    </div>
+
+    <div class="position-card tappable fade-up" onclick="switchTab(2)">
+      <div class="position-top">
+        <div class="position-ticker">Т-Инвестиции</div>
+        <div class="position-share" id="connectionStatus" style="color: var(--text-tertiary); font-size: 13px;">● Не подключено</div>
+      </div>
+      <div class="position-note"><span>Режим: только чтение</span></div>
+    </div>
+
+    <div style="height: 40px;"></div>
+  </div>
+
+</div>
+
+<!-- Tab bar -->
+<div class="tab-bar">
+  <button class="tab active" onclick="switchTab(1)">
+    <div class="tab-icon">🧭</div>
+    <div class="tab-label">Путь</div>
+  </button>
+  <button class="tab" onclick="switchTab(2)">
+    <div class="tab-icon">📊</div>
+    <div class="tab-label">Портфель</div>
+  </button>
+  <button class="tab" onclick="switchTab(3)">
+    <div class="tab-icon">🪞</div>
+    <div class="tab-label">Зеркало</div>
+  </button>
+  <button class="tab" onclick="switchTab(4)">
+    <div class="tab-icon">📖</div>
+    <div class="tab-label">Журнал</div>
+  </button>
+  <button class="tab" onclick="switchTab(5)">
+    <div class="tab-icon">👤</div>
+    <div class="tab-label">Я</div>
+  </button>
+</div>
+
+<div class="home-indicator"></div>
+
+<script>
+  // ==== NAVIGATION ====
+  function switchTab(index) {
+    document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', i === index - 1));
+    document.querySelectorAll('.tab-content').forEach((c, i) => c.classList.toggle('active', i === index - 1));
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (navigator.vibrate) navigator.vibrate(5);
+  }
+
+  function selectScenario(el) {
+    document.querySelectorAll('.scenario-card').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+    if (navigator.vibrate) navigator.vibrate(5);
+  }
+
+  // ==== CLOCK ====
+  function updateClock() {
+    const now = new Date();
+    document.getElementById('clock').textContent = now.getHours() + ':' + String(now.getMinutes()).padStart(2, '0');
+  }
+  updateClock();
+  setInterval(updateClock, 30000);
+
+  // ==== GOAL ANIMATION ====
+  function animateGoal(currentValue) {
+    const goal = 1000000;
+    const percent = Math.min((currentValue / goal) * 100, 100);
+
+    document.getElementById('goalProgress').style.width = percent + '%';
+    document.getElementById('goalPercent').textContent = percent.toFixed(1) + '%';
+    document.getElementById('goalCurrent').textContent = formatRub(currentValue);
+
+    const remaining = Math.max(goal - currentValue, 0);
+    document.getElementById('goalRemaining').textContent = formatRub(remaining);
+
+    // Reality projection
+    const yearsLeft = 3.25;
+    const projectedValue = currentValue * Math.pow(1.05, yearsLeft);
+    document.getElementById('realityReach').textContent = formatRub(projectedValue);
+    document.getElementById('realityGap').textContent = formatRub(Math.max(goal - projectedValue, 0));
+
+    // What if
+    document.getElementById('whatif1').textContent = '+' + formatRub(currentValue * 0.03);
+    document.getElementById('whatif2').textContent = '+' + formatRub(currentValue * 0.05);
+  }
+
+  function formatRub(value) {
+    return Math.round(value).toLocaleString('ru-RU') + ' ₽';
+  }
+
+  // Initialize with demo data
+  animateGoal(412800);
+
+  // ==== API ====
+  const API_URL = 'https://invest-public-api.tinkoff.ru/rest';
+
+  async function apiCall(token, service, method, body = {}) {
+    const res = await fetch(`${API_URL}/${service}/${method}`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(body)
+    });
+
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`${res.status}: ${text}`);
+    }
+    return res.json();
+  }
+
+  function parseMoney(value) {
+    if (!value) return 0;
+    return parseFloat(value.units || 0) + (value.nano || 0) / 1e9;
+  }
+
+  async function loadPortfolio() {
+    const token = document.getElementById('tokenInput').value.trim();
+    const status = document.getElementById('tokenStatus');
+    const btn = document.getElementById('loadBtn');
+    const summary = document.getElementById('portfolioSummary');
+
+    if (!token) {
+      status.className = 'token-status error';
+      status.textContent = 'Вставь токен';
+      return;
+    }
+
+    status.className = 'token-status loading';
+    status.textContent = 'Загружаю счета...';
+    btn.disabled = true;
+    summary.style.display = 'none';
+
+    try {
+      const accountsData = await apiCall(token, 'tinkoff.public.invest.api.contract.v1.UsersService', 'GetAccounts', {});
+      const accounts = accountsData.accounts || [];
+      if (accounts.length === 0) throw new Error('Не найдено ни одного счёта');
+
+      const account = accounts.find(a => a.status === 1) || accounts[0];
+      status.textContent = `Загружаю портфель "${account.name}"...`;
+
+      const portfolio = await apiCall(token, 'tinkoff.public.invest.api.contract.v1.OperationsService', 'GetPortfolio', {
+        accountId: account.id
+      });
+
+      status.className = 'token-status ok';
+      status.textContent = '✓ Портфель загружен';
+
+      renderPortfolio(portfolio, account);
+      summary.style.display = 'block';
+
+      // Update connection status
+      document.getElementById('connectionStatus').textContent = '● Подключено';
+      document.getElementById('connectionStatus').style.color = 'var(--accent-green)';
+
+    } catch (err) {
+      status.className = 'token-status error';
+      status.textContent = 'Ошибка: ' + err.message;
+      summary.style.display = 'none';
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  function renderPortfolio(portfolio, account) {
+    const positions = portfolio.positions || [];
+    const totalValue = parseMoney(portfolio.totalAmountShares);
+
+    // Summary
+    document.getElementById('totalValue').textContent = formatRub(totalValue);
+    document.getElementById('positionsCount').textContent = positions.length;
+    document.getElementById('accountName').textContent = account.name || 'Основной';
+
+    // Subtitle
+    document.getElementById('portfolioSubtitle').textContent = formatRub(totalValue) + ' · ' + positions.length + ' позиций';
+
+    // Update goal
+    animateGoal(totalValue);
+
+    // Positions
+    const container = document.getElementById('positionsList');
+    container.innerHTML = '';
+
+    positions.forEach(p => {
+      const qty = parseMoney(p.quantity);
+      const price = parseMoney(p.currentPrice);
+      const posValue = qty * price;
+      const share = totalValue > 0 ? (posValue / totalValue * 100) : 0;
+
+      let badgeClass = 'green';
+      let note = '✓ В норме для твоей цели';
+      let noteClass = '';
+
+      if (share > 25) {
+        badgeClass = 'red';
+        note = '⚠️ Концентрация критическая · риск для цели';
+        noteClass = 'danger';
+      } else if (share > 15) {
+        badgeClass = 'yellow';
+        note = '⚠️ Концентрация выше комфортной';
+        noteClass = 'warn';
+      }
+
+      const card = document.createElement('div');
+      card.className = 'position-card tappable fade-up';
+      card.innerHTML = `
+        <div class="position-top">
+          <div class="position-ticker">${p.ticker || p.figi || '—'}</div>
+          <div class="position-share">${share.toFixed(1)}%</div>
+        </div>
+        <div class="position-bar">
+          <div class="position-bar-fill ${badgeClass}" style="width: ${Math.min(share, 100)}%"></div>
+        </div>
+        <div class="position-note ${noteClass}">
+          <span>${qty.toFixed(0)} шт · ${price.toFixed(2)} ₽ · ${formatRub(posValue)}</span>
+        </div>
+        <div class="position-note ${noteClass}" style="margin-top: 6px;">
+          <span>${note}</span>
+        </div>
+      `;
+      container.appendChild(card);
+    });
+  }
+</script>
+
+</body>
+</html>
