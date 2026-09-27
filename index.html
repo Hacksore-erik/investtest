@@ -300,6 +300,11 @@
   .hint-bar .icon { font-size: 20px; flex-shrink: 0; }
   .hint-bar .text { font-size: 13px; color: var(--text-secondary); font-weight: 500; line-height: 1.4; flex: 1; }
   .hint-bar .text .hl { color: var(--accent-blue); font-weight: 600; }
+
+  .empty-state { padding: 40px 24px; text-align: center; }
+  .empty-state .icon { font-size: 40px; margin-bottom: 16px; opacity: 0.5; }
+  .empty-state .title { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+  .empty-state .desc { font-size: 13px; color: var(--text-tertiary); line-height: 1.5; }
 </style>
 </head>
 <body>
@@ -340,7 +345,7 @@
       <div class="reality-line"><span class="lbl">Не хватит</span><span class="val red" id="realityGap">— ₽</span></div>
       <div class="reality-divider"></div>
       <div style="font-size: 13px; color: var(--text-tertiary); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 12px;">Чтобы успеть</div>
-      <div class="reality-options">
+      <div class="reality-options" id="realityOptions">
         <div class="reality-option"><span class="arrow">→</span><span class="text">+18% доходности в год</span></div>
         <div class="reality-option"><span class="arrow">→</span><span class="text">+4 500 ₽ в месяц</span></div>
         <div class="reality-option"><span class="arrow">→</span><span class="text">Продлить срок на 1 год 8 мес.</span></div>
@@ -349,33 +354,32 @@
 
     <div class="card today-card fade-up">
       <div class="today-top"><div class="today-badge"><span class="dot"></span>Сегодня</div></div>
-      <div class="today-row"><span class="lbl">Ты на пути</span><span class="val green">✓</span></div>
-      <div class="today-row"><span class="lbl">Отклонение от плана</span><span class="val red">−2,4%</span></div>
-      <div class="today-row"><span class="lbl">Стоимость для цели</span><span class="val red">47 200 ₽</span></div>
+      <div class="today-row"><span class="lbl">Отклонение от плана</span><span class="val red" id="todayDeviation">—</span></div>
+      <div class="today-row"><span class="lbl">Стоимость для цели</span><span class="val red" id="todayCost">—</span></div>
       <div class="today-cta tappable" onclick="switchTab(3)">Что тебя сбивает →</div>
     </div>
 
     <div class="card insight-card fade-up">
       <div class="insight-label"><span>💡</span><span>Инсайт дня</span></div>
-      <div class="insight-text">За последние 30 дней ты открывал приложение брокера <span class="insight-highlight">47 раз</span>. Средний инвестор — 12. Больше проверок ≠ лучше результат.</div>
+      <div class="insight-text" id="insightText">Загрузи токен на вкладке «Портфель», чтобы увидеть персональный инсайт.</div>
     </div>
 
-    <div class="section-header fade-up"><h2>Сценарии</h2><span class="action tappable">Все</span></div>
+    <div class="section-header fade-up"><h2>Сценарии</h2></div>
 
     <div class="scenario-card active tappable fade-up" onclick="selectScenario(this)">
       <div class="scenario-head"><div class="scenario-name">Базовый</div><div class="scenario-check">✓</div></div>
       <div class="scenario-desc">Индекс + 5% в год</div>
-      <div class="scenario-result"><span class="lbl">К сроку</span><span class="val green">720 000 ₽</span></div>
+      <div class="scenario-result"><span class="lbl">К сроку</span><span class="val green" id="scenarioBase">— ₽</span></div>
     </div>
     <div class="scenario-card tappable fade-up" onclick="selectScenario(this)">
       <div class="scenario-head"><div class="scenario-name">Осторожный</div><div class="scenario-check">✓</div></div>
       <div class="scenario-desc">ОФЗ + вклады</div>
-      <div class="scenario-result"><span class="lbl">К сроку</span><span class="val yellow">580 000 ₽</span></div>
+      <div class="scenario-result"><span class="lbl">К сроку</span><span class="val yellow" id="scenarioSafe">— ₽</span></div>
     </div>
     <div class="scenario-card tappable fade-up" onclick="selectScenario(this)">
       <div class="scenario-head"><div class="scenario-name">Агрессивный</div><div class="scenario-check">✓</div></div>
       <div class="scenario-desc">Дивидендные акции + фонды</div>
-      <div class="scenario-result"><span class="lbl">К сроку</span><span class="val green">890 000 ₽</span></div>
+      <div class="scenario-result"><span class="lbl">К сроку</span><span class="val green" id="scenarioAggressive">— ₽</span></div>
       <div class="scenario-result"><span class="lbl">Риск просадки</span><span class="val red">до −35% в год</span></div>
     </div>
     <div style="height: 40px;"></div>
@@ -399,8 +403,9 @@
     <div id="portfolioSummary" style="display: none;">
       <div class="card fade-up" style="padding: 22px 24px;">
         <div class="reality-line"><span class="lbl">Общая стоимость</span><span class="val" style="font-size: 18px;" id="totalValue">—</span></div>
+        <div class="reality-line"><span class="lbl">Вложено</span><span class="val" id="investedValue">—</span></div>
+        <div class="reality-line"><span class="lbl">Доходность</span><span class="val green" id="totalReturn">—</span></div>
         <div class="reality-line"><span class="lbl">Позиций</span><span class="val" id="positionsCount">—</span></div>
-        <div class="reality-line"><span class="lbl">Счёт</span><span class="val" id="accountName">—</span></div>
       </div>
 
       <div class="section-header fade-up"><h2>Позиции</h2></div>
@@ -410,7 +415,7 @@
         <div class="whatif-title">Что если</div>
         <div class="whatif-row"><div class="whatif-action">Уменьшил крупнейшую позицию до 15%</div><div class="whatif-effect" id="whatif1">— ₽</div></div>
         <div class="whatif-row"><div class="whatif-action">Перевёл всё в индекс MCFTR</div><div class="whatif-effect" id="whatif2">— ₽</div></div>
-        <div class="whatif-row"><div class="whatif-action">Не совершал лишние сделки</div><div class="whatif-effect">+32 000 ₽</div></div>
+        <div class="whatif-row"><div class="whatif-action">Не совершал лишние сделки</div><div class="whatif-effect" id="whatif3">— ₽</div></div>
       </div>
     </div>
     <div style="height: 40px;"></div>
@@ -428,39 +433,32 @@
       <div class="text">Это <span class="hl">не обвинения</span>. Это закономерности, которые стоят тебе денег и времени.</div>
     </div>
 
-    <div class="mirror-card fade-up">
+    <div class="mirror-card fade-up" id="dispositionCard">
       <div class="mirror-title">Ты рано фиксируешь прибыль и долго держишь убытки</div>
-      <div class="mirror-row"><span class="lbl">Средняя прибыль</span><span class="val green">+8,4%</span></div>
-      <div class="mirror-row"><span class="lbl">Средний убыток</span><span class="val red">−14,1%</span></div>
-      <div class="mirror-footer">Стоимость для цели: <span class="hl">≈ 47 200 ₽</span></div>
-      <div class="mirror-cta tappable">Показать 12 примеров →</div>
+      <div class="mirror-row"><span class="lbl">Средняя прибыль</span><span class="val green" id="avgProfit">—</span></div>
+      <div class="mirror-row"><span class="lbl">Средний убыток</span><span class="val red" id="avgLoss">—</span></div>
+      <div class="mirror-footer" id="dispositionFooter">Подключи токен, чтобы увидеть свои паттерны.</div>
     </div>
 
-    <div class="mirror-card fade-up">
+    <div class="mirror-card fade-up" id="overtradingCard">
       <div class="mirror-title">Ты слишком много торгуешь</div>
-      <div class="mirror-row"><span class="lbl">Сделок за квартал</span><span class="val">84</span></div>
-      <div class="mirror-row"><span class="lbl">Средний результат</span><span class="val">+0,2%</span></div>
-      <div class="mirror-footer">Если бы ты сделал 20 сделок — результат был бы <span class="hl">+3,1%</span>.<br>Стоимость: <span class="hl">≈ 32 000 ₽</span></div>
-      <div class="mirror-cta tappable">Какие сделки были лишними →</div>
+      <div class="mirror-row"><span class="lbl">Сделок за год</span><span class="val" id="tradesCount">—</span></div>
+      <div class="mirror-row"><span class="lbl">Комиссии за год</span><span class="val yellow" id="commissionTotal">—</span></div>
+      <div class="mirror-footer" id="overtradingFooter">Подключи токен для анализа.</div>
     </div>
 
-    <div class="mirror-card fade-up">
+    <div class="mirror-card fade-up" id="concentrationCard">
       <div class="mirror-title">Ты держишь яйца в двух корзинах</div>
-      <div class="mirror-row"><span class="lbl">Топ-2 бумаги</span><span class="val yellow">36% портфеля</span></div>
-      <div class="mirror-row"><span class="lbl">Топ-5 бумаг</span><span class="val">71% портфеля</span></div>
-      <div class="mirror-footer">При просадке одной бумаги на 30%:<br>Потеря: <span class="hl">−124 000 ₽</span> · Влияние на цель: <span class="hl">−6 мес. срока</span></div>
-      <div class="mirror-cta tappable">Симуляция «что если» →</div>
+      <div class="mirror-row"><span class="lbl">Топ-2 бумаги</span><span class="val yellow" id="top2Share">—</span></div>
+      <div class="mirror-row"><span class="lbl">Топ-5 бумаг</span><span class="val" id="top5Share">—</span></div>
+      <div class="mirror-footer" id="concentrationFooter">Подключи токен для анализа.</div>
     </div>
 
-    <!-- ОБНОВЛЁННЫЙ БЛОК: проверка портфеля в дни падения -->
     <div class="mirror-card fade-up" id="checkingPatternCard">
       <div class="mirror-title">Ты чаще проверяешь портфель, когда он падает</div>
-      <div id="checkingPatternContent">
-        <div class="mirror-row"><span class="lbl">Проверок в дни роста</span><span class="val" id="checksGrowth">—</span></div>
-        <div class="mirror-row"><span class="lbl">Проверок в дни падения</span><span class="val red" id="checksFall">—</span></div>
-        <div class="mirror-footer" id="checkingPatternFooter">Подключи токен, чтобы увидеть анализ твоих операций.</div>
-      </div>
-      <div class="mirror-cta tappable" onclick="switchTab(2)">Подключить токен →</div>
+      <div class="mirror-row"><span class="lbl">Сделок в дни роста</span><span class="val" id="checksGrowth">—</span></div>
+      <div class="mirror-row"><span class="lbl">Сделок в дни падения</span><span class="val red" id="checksFall">—</span></div>
+      <div class="mirror-footer" id="checkingPatternFooter">Подключи токен, чтобы увидеть анализ твоих операций.</div>
     </div>
 
     <div style="height: 40px;"></div>
@@ -474,38 +472,21 @@
     </div>
 
     <div class="card quality-card fade-up">
-      <div class="quality-title">Качество решений за год</div>
-      <div class="quality-row"><span class="lbl">Сделок с тезисом</span><span class="val">34 из 156</span></div>
-      <div class="quality-row"><span class="lbl">Тезисов подтвердилось</span><span class="val green">61%</span></div>
-      <div class="quality-row"><span class="lbl">Результат с тезисом</span><span class="val green">+4,8%</span></div>
-      <div class="quality-row"><span class="lbl">Результат без тезиса</span><span class="val red">−1,2%</span></div>
+      <div class="quality-title">Статистика за год</div>
+      <div class="quality-row"><span class="lbl">Всего операций</span><span class="val" id="journalTotalOps">—</span></div>
+      <div class="quality-row"><span class="lbl">Покупок</span><span class="val green" id="journalBuys">—</span></div>
+      <div class="quality-row"><span class="lbl">Продаж</span><span class="val red" id="journalSells">—</span></div>
+      <div class="quality-row"><span class="lbl">Дивидендов и купонов</span><span class="val green" id="journalDividends">—</span></div>
     </div>
 
-    <div class="section-header fade-up"><h2>Записи</h2><span class="action tappable">Все</span></div>
-
-    <div class="journal-item tappable fade-up">
-      <div class="journal-head"><div class="journal-type">Покупка</div><div class="journal-date">12.09.2026</div></div>
-      <div class="journal-title">GAZP × 200</div>
-      <div class="journal-block"><div class="lbl">Тезис</div><div class="txt">Ставка на дивиденды + рост газа</div></div>
-      <div class="journal-block"><div class="lbl">Ожидание</div><div class="txt">Дивиденды 12% в год, горизонт 12 мес.</div></div>
-      <div class="journal-block"><div class="lbl">Спустя 45 дней</div><div class="txt green">Цена −4,2% · Тезис подтверждается</div></div>
+    <div class="section-header fade-up"><h2>Последние операции</h2></div>
+    <div id="journalList">
+      <div class="empty-state">
+        <div class="icon">📖</div>
+        <div class="title">Нет данных</div>
+        <div class="desc">Подключи токен на вкладке «Портфель»</div>
+      </div>
     </div>
-
-    <div class="journal-item tappable fade-up">
-      <div class="journal-head"><div class="journal-type">Продажа</div><div class="journal-date">28.08.2026</div></div>
-      <div class="journal-title">YNDX — вся позиция</div>
-      <div class="journal-block"><div class="lbl">Тезис</div><div class="txt">Переоценён, жду коррекции</div></div>
-      <div class="journal-block"><div class="lbl">Ожидание</div><div class="txt">Падение на 15% за 3 месяца</div></div>
-      <div class="journal-block"><div class="lbl">Результат</div><div class="txt red">Бумага выросла на 8%. Тезис не подтвердился</div></div>
-    </div>
-
-    <div class="journal-item tappable fade-up">
-      <div class="journal-head"><div class="journal-type">Покупка</div><div class="journal-date">15.07.2026</div></div>
-      <div class="journal-title">LKOH × 10</div>
-      <div class="journal-block"><div class="lbl">Тезис</div><div class="txt">Ставка на дивидендный поток</div></div>
-      <div class="journal-block"><div class="lbl">Спустя 75 дней</div><div class="txt green">Цена +6,8% · Тезис подтверждается</div></div>
-    </div>
-
     <div style="height: 40px;"></div>
   </div>
 
@@ -516,7 +497,6 @@
       <div class="subtitle">Налоги, цели, настройки</div>
     </div>
 
-    <!-- ОБНОВЛЁННЫЙ БЛОК: налоги с API -->
     <div class="card tax-card fade-up" id="taxCard">
       <div class="tax-title">Налоги 2026</div>
       <div id="taxContent">
@@ -536,24 +516,17 @@
 
     <div class="card cost-card fade-up">
       <div class="cost-title">Цена твоих решений за год</div>
-      <div class="cost-row"><span class="lbl">Лишних сделок</span><span class="val">64</span></div>
-      <div class="cost-row"><span class="lbl">Комиссии</span><span class="val">6 400 ₽</span></div>
-      <div class="cost-row"><span class="lbl">Налог из-за сделок</span><span class="val">8 200 ₽</span></div>
-      <div class="cost-row"><span class="lbl">Упущено для цели</span><span class="val">≈ 32 000 ₽</span></div>
-      <div class="cost-total"><span class="lbl">Итого — цена импульса</span><span class="val">46 600 ₽</span></div>
+      <div class="cost-row"><span class="lbl">Комиссии</span><span class="val" id="costCommissions">—</span></div>
+      <div class="cost-row"><span class="lbl">Налог</span><span class="val" id="costTax">—</span></div>
+      <div class="cost-row"><span class="lbl">Упущено для цели</span><span class="val" id="costMissed">—</span></div>
+      <div class="cost-total"><span class="lbl">Итого — цена решений</span><span class="val" id="costTotal">—</span></div>
     </div>
 
-    <div class="section-header fade-up"><h2>Мои цели</h2><span class="action tappable">Добавить</span></div>
-
+    <div class="section-header fade-up"><h2>Мои цели</h2></div>
     <div class="position-card tappable fade-up">
-      <div class="position-top"><div class="position-ticker">🏠 Квартира</div><div class="position-share">41%</div></div>
-      <div class="position-bar"><div class="position-bar-fill green" style="width: 41%"></div></div>
-      <div class="position-note"><span>1 000 000 ₽ к 31.12.2029</span></div>
-    </div>
-    <div class="position-card tappable fade-up">
-      <div class="position-top"><div class="position-ticker">🎓 Образование</div><div class="position-share">12%</div></div>
-      <div class="position-bar"><div class="position-bar-fill yellow" style="width: 12%"></div></div>
-      <div class="position-note warn"><span>600 000 ₽ к 01.09.2028 · отставание</span></div>
+      <div class="position-top"><div class="position-ticker">🏠 Квартира</div><div class="position-share" id="goal1Share">—</div></div>
+      <div class="position-bar"><div class="position-bar-fill green" id="goal1Bar" style="width: 0%"></div></div>
+      <div class="position-note"><span id="goal1Note">1 000 000 ₽ к 31.12.2029</span></div>
     </div>
 
     <div class="section-header fade-up"><h2>Подключение</h2></div>
@@ -577,7 +550,20 @@
 <div class="home-indicator"></div>
 
 <script>
-  // ==== NAVIGATION ====
+  // ============ ГЛОБАЛЬНОЕ СОСТОЯНИЕ ============
+  const state = {
+    token: null,
+    account: null,
+    portfolio: null,
+    operations: [],
+    totalValue: 0,
+    investedValue: 0
+  };
+
+  const GOAL = 1000000;
+  const YEARS_LEFT = 3.25;
+
+  // ============ НАВИГАЦИЯ ============
   function switchTab(index) {
     document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', i === index - 1));
     document.querySelectorAll('.tab-content').forEach((c, i) => c.classList.toggle('active', i === index - 1));
@@ -598,30 +584,22 @@
   updateClock();
   setInterval(updateClock, 30000);
 
-  // ==== GOAL ====
-  function animateGoal(currentValue) {
-    const goal = 1000000;
-    const percent = Math.min((currentValue / goal) * 100, 100);
-    document.getElementById('goalProgress').style.width = percent + '%';
-    document.getElementById('goalPercent').textContent = percent.toFixed(1) + '%';
-    document.getElementById('goalCurrent').textContent = formatRub(currentValue);
-    const remaining = Math.max(goal - currentValue, 0);
-    document.getElementById('goalRemaining').textContent = formatRub(remaining);
-    const yearsLeft = 3.25;
-    const projectedValue = currentValue * Math.pow(1.05, yearsLeft);
-    document.getElementById('realityReach').textContent = formatRub(projectedValue);
-    document.getElementById('realityGap').textContent = formatRub(Math.max(goal - projectedValue, 0));
-    document.getElementById('whatif1').textContent = '+' + formatRub(currentValue * 0.03);
-    document.getElementById('whatif2').textContent = '+' + formatRub(currentValue * 0.05);
-  }
-
+  // ============ ФОРМАТИРОВАНИЕ ============
   function formatRub(value) {
     return Math.round(value).toLocaleString('ru-RU') + ' ₽';
   }
 
-  animateGoal(412800);
+  function formatPercent(value) {
+    const sign = value >= 0 ? '+' : '';
+    return sign + value.toFixed(1) + '%';
+  }
 
-  // ==== API ====
+  function parseMoney(value) {
+    if (!value) return 0;
+    return parseFloat(value.units || 0) + (value.nano || 0) / 1e9;
+  }
+
+  // ============ API ============
   const API_URL = 'https://invest-public-api.tinkoff.ru/rest';
 
   async function apiCall(token, service, method, body = {}) {
@@ -634,173 +612,254 @@
     return res.json();
   }
 
-  function parseMoney(value) {
-    if (!value) return 0;
-    return parseFloat(value.units || 0) + (value.nano || 0) / 1e9;
+  // ============ РЕНДЕР ПУТИ ============
+  function renderPath() {
+    const current = state.totalValue || 0;
+    const percent = Math.min((current / GOAL) * 100, 100);
+
+    document.getElementById('goalProgress').style.width = percent + '%';
+    document.getElementById('goalPercent').textContent = percent.toFixed(1) + '%';
+    document.getElementById('goalCurrent').textContent = formatRub(current);
+    document.getElementById('goalRemaining').textContent = formatRub(Math.max(GOAL - current, 0));
+
+    // Проекция под 5% годовых
+    const projected = current * Math.pow(1.05, YEARS_LEFT);
+    document.getElementById('realityReach').textContent = formatRub(projected);
+    document.getElementById('realityGap').textContent = formatRub(Math.max(GOAL - projected, 0));
+
+    // Сценарии
+    document.getElementById('scenarioBase').textContent = formatRub(current * Math.pow(1.05, YEARS_LEFT));
+    document.getElementById('scenarioSafe').textContent = formatRub(current * Math.pow(1.08, YEARS_LEFT));
+    document.getElementById('scenarioAggressive').textContent = formatRub(current * Math.pow(1.12, YEARS_LEFT));
+
+    // Что если
+    document.getElementById('whatif1').textContent = '+' + formatRub(current * 0.03);
+    document.getElementById('whatif2').textContent = '+' + formatRub(current * 0.05);
+    document.getElementById('whatif3').textContent = '+' + formatRub(current * 0.07);
+
+    // Отклонение от плана (план = линейный рост к цели)
+    const plannedProgress = (1 / (YEARS_LEFT + 3.25)) * 100; // сколько должно быть пройдено сейчас
+    const deviation = percent - plannedProgress;
+    document.getElementById('todayDeviation').textContent = formatPercent(deviation);
+    document.getElementById('todayCost').textContent = formatRub(Math.abs(deviation) / 100 * GOAL);
   }
 
-  // ==== НАЛОГИ (обновлено) ====
-  // Считает инвестиционный доход из операций и применяет прогрессивную шкалу 2026
-  function calculateTax(operations, portfolio) {
-    // Дивиденды, купоны и прибыль от продаж
-    let dividendIncome = 0;
-    let couponIncome = 0;
-    let realizedProfit = 0;
+  // ============ РЕНДЕР НАЛОГОВ ============
+  function calculateTax(operations) {
+    let dividendIncome = 0, couponIncome = 0, realizedProfit = 0, commissions = 0;
 
     operations.forEach(op => {
       const payment = parseMoney(op.payment);
-      const type = op.operationType || op.type || '';
+      const type = op.type || '';
 
-      // Типы операций в T-Invest API:
-      // 1 - BUY, 2 - SELL, 3 - BUY_CARD, 4 - SELL_CARD,
-      // 5 - DIVIDEND, 6 - COUPON, 7 - TAX, 8 - FEE, 9 - AMORTIZATION
-      if (op.type === 5 || type.includes('DIVIDEND')) {
-        dividendIncome += Math.abs(payment);
-      } else if (op.type === 6 || type.includes('COUPON')) {
-        couponIncome += Math.abs(payment);
-      } else if (op.type === 2 || type.includes('SELL')) {
-        // Для реализованной прибыли нужен FIFO, но упрощённо: payment > 0
-        if (payment > 0) realizedProfit += payment;
-      }
+      if (type === 5 || type === 'OPERATION_TYPE_DIVIDEND') dividendIncome += Math.abs(payment);
+      else if (type === 6 || type === 'OPERATION_TYPE_COUPON') couponIncome += Math.abs(payment);
+      else if (type === 2 || type === 'OPERATION_TYPE_SELL') { if (payment > 0) realizedProfit += payment; }
+      else if (type === 8 || type === 'OPERATION_TYPE_FEE') commissions += Math.abs(payment);
     });
 
-    const totalInvestmentIncome = dividendIncome + couponIncome + realizedProfit;
+    const totalIncome = dividendIncome + couponIncome + realizedProfit;
 
-    // Прогрессивная шкала 2026 для инвестиционного дохода:
-    // 13% до 2,4 млн ₽, 15% с превышения до 5 млн, 18% с превышения до 20 млн
-    const THRESHOLD_1 = 2400000;  // 2,4 млн
-    const THRESHOLD_2 = 5000000;  // 5 млн
-    const THRESHOLD_3 = 20000000; // 20 млн
+    const TH1 = 2400000, TH2 = 5000000, TH3 = 20000000;
+    let tax = 0, activeBracket = 13;
 
-    let tax = 0;
-    let activeBracket = 13;
+    if (totalIncome <= TH1) { tax = totalIncome * 0.13; activeBracket = 13; }
+    else if (totalIncome <= TH2) { tax = TH1 * 0.13 + (totalIncome - TH1) * 0.15; activeBracket = 15; }
+    else if (totalIncome <= TH3) { tax = TH1 * 0.13 + (TH2 - TH1) * 0.15 + (totalIncome - TH2) * 0.18; activeBracket = 18; }
+    else { tax = TH1 * 0.13 + (TH2 - TH1) * 0.15 + (TH3 - TH2) * 0.18 + (totalIncome - TH3) * 0.20; activeBracket = 20; }
 
-    if (totalInvestmentIncome <= THRESHOLD_1) {
-      tax = totalInvestmentIncome * 0.13;
-      activeBracket = 13;
-    } else if (totalInvestmentIncome <= THRESHOLD_2) {
-      tax = THRESHOLD_1 * 0.13 + (totalInvestmentIncome - THRESHOLD_1) * 0.15;
-      activeBracket = 15;
-    } else if (totalInvestmentIncome <= THRESHOLD_3) {
-      tax = THRESHOLD_1 * 0.13 + (THRESHOLD_2 - THRESHOLD_1) * 0.15 + (totalInvestmentIncome - THRESHOLD_2) * 0.18;
-      activeBracket = 18;
-    } else {
-      tax = THRESHOLD_1 * 0.13 + (THRESHOLD_2 - THRESHOLD_1) * 0.15 + (THRESHOLD_3 - THRESHOLD_2) * 0.18 + (totalInvestmentIncome - THRESHOLD_3) * 0.20;
-      activeBracket = 20;
-    }
-
-    return {
-      dividendIncome,
-      couponIncome,
-      realizedProfit,
-      totalInvestmentIncome,
-      tax,
-      activeBracket,
-      // Уже начислено брокером (упрощённо: 13% с дохода до порога)
-      accrued: Math.min(totalInvestmentIncome, THRESHOLD_1) * 0.13
-    };
+    return { totalIncome, tax, activeBracket, commissions, dividendIncome, couponIncome, realizedProfit };
   }
 
   function renderTax(taxData) {
-    document.getElementById('taxIncome').textContent = formatRub(taxData.totalInvestmentIncome);
+    document.getElementById('taxIncome').textContent = formatRub(taxData.totalIncome);
     document.getElementById('taxForecast').textContent = formatRub(taxData.tax);
-    document.getElementById('taxAccrued').textContent = formatRub(taxData.accrued);
+    document.getElementById('taxAccrued').textContent = formatRub(Math.min(taxData.totalIncome, 2400000) * 0.13);
 
-    // Подсветить активный порог
     document.querySelectorAll('.bracket-row').forEach(row => {
       const bracket = parseInt(row.dataset.bracket);
       row.classList.toggle('active', bracket === taxData.activeBracket);
     });
 
-    // Заметка
     const note = document.getElementById('taxNote');
-    if (taxData.totalInvestmentIncome > 2400000) {
-      const extra = taxData.tax - taxData.accrued;
-      note.innerHTML = `Ты превысил порог 2,4 млн ₽. Брокер удержал только 13% с первых 2,4 млн.<br>Доплатить самостоятельно: <span class="hl">${formatRub(extra)}</span>.`;
-    } else if (taxData.totalInvestmentIncome > 2000000) {
+    if (taxData.totalIncome > 2400000) {
+      const extra = taxData.tax - Math.min(taxData.totalIncome, 2400000) * 0.13;
+      note.innerHTML = `Ты превысил порог 2,4 млн ₽.<br>Доплатить самостоятельно: <span class="hl">${formatRub(extra)}</span>.`;
+    } else if (taxData.totalIncome > 2000000) {
       note.innerHTML = `Ты близко к порогу 2,4 млн ₽.<br>Прогноз налога: <span class="hl">${formatRub(taxData.tax)}</span>.`;
     } else {
       note.innerHTML = `Инвестиционный доход в пределах порога 2,4 млн ₽.<br>Ставка: <span class="hl">13%</span>.`;
     }
+
+    // Цена решений
+    document.getElementById('costCommissions').textContent = formatRub(taxData.commissions);
+    document.getElementById('costTax').textContent = formatRub(taxData.tax);
+    document.getElementById('costMissed').textContent = formatRub(state.totalValue * 0.05);
+    document.getElementById('costTotal').textContent = formatRub(taxData.commissions + taxData.tax + state.totalValue * 0.05);
   }
 
-  // ==== ПОВЕДЕНЧЕСКИЙ АНАЛИЗ (обновлено) ====
-  // Считает, как часто пользователь совершал сделки в дни падения vs роста
-  function analyzeCheckingPattern(operations, portfolioHistory) {
-    if (!operations || operations.length < 5) {
-      return null;
+  // ============ РЕНДЕР ЗЕРКАЛА ============
+  function renderMirror(operations) {
+    // 1. Эффект диспозиции
+    const sells = operations.filter(op => op.type === 2 || op.type === 'OPERATION_TYPE_SELL');
+    const buys = operations.filter(op => op.type === 1 || op.type === 'OPERATION_TYPE_BUY');
+
+    if (sells.length > 0) {
+      const profits = [];
+      const losses = [];
+      sells.forEach(op => {
+        const p = parseMoney(op.payment);
+        if (p > 0) profits.push(p);
+        else losses.push(Math.abs(p));
+      });
+
+      const avgProfit = profits.length > 0 ? profits.reduce((a, b) => a + b, 0) / profits.length : 0;
+      const avgLoss = losses.length > 0 ? losses.reduce((a, b) => a + b, 0) / losses.length : 0;
+
+      document.getElementById('avgProfit').textContent = formatRub(avgProfit);
+      document.getElementById('avgLoss').textContent = '−' + formatRub(avgLoss);
+      document.getElementById('dispositionFooter').innerHTML = `На основе <span class="hl">${sells.length} продаж</span> за период. ${avgLoss > avgProfit ? 'Ты фиксируешь убытки больше, чем прибыль.' : 'У тебя положительное соотношение прибыли и убытков.'}`;
     }
 
-    // Группируем операции по дням
-    const dailyActivity = {};
+    // 2. Овертрейдинг
+    const yearOps = operations.filter(op => {
+      if (!op.date) return false;
+      const year = parseInt(op.date.split('-')[0]);
+      return year === 2026 || year === 2025;
+    });
+
+    document.getElementById('tradesCount').textContent = yearOps.length;
+    document.getElementById('overtradingFooter').innerHTML = yearOps.length > 50
+      ? `<span class="hl">${yearOps.length} операций</span> за год. Средний инвестор совершает 40.`
+      : `${yearOps.length} операций за год. Это в пределах нормы.`;
+
+    // 3. Концентрация
+    if (state.portfolio) {
+      const positions = (state.portfolio.positions || [])
+        .map(p => ({ value: parseMoney(p.quantity) * parseMoney(p.currentPrice) }))
+        .sort((a, b) => b.value - a.value);
+
+      const total = positions.reduce((sum, p) => sum + p.value, 0);
+      if (total > 0) {
+        const top2 = positions.slice(0, 2).reduce((sum, p) => sum + p.value, 0) / total * 100;
+        const top5 = positions.slice(0, 5).reduce((sum, p) => sum + p.value, 0) / total * 100;
+
+        document.getElementById('top2Share').textContent = top2.toFixed(0) + '%';
+        document.getElementById('top5Share').textContent = top5.toFixed(0) + '%';
+
+        const concentrationRisk = top2 > 40 ? 'высокая' : top2 > 25 ? 'умеренная' : 'низкая';
+        document.getElementById('concentrationFooter').innerHTML = `Концентрация топ-2: <span class="hl">${top2.toFixed(0)}%</span>. Риск: ${concentrationRisk}.`;
+      }
+    }
+
+    // 4. Проверки в дни падения
+    const daily = {};
     operations.forEach(op => {
-      const date = op.date ? op.date.split('T')[0] : null;
-      if (!date) return;
-      if (!dailyActivity[date]) {
-        dailyActivity[date] = { count: 0, totalPayment: 0, operations: [] };
-      }
-      dailyActivity[date].count++;
-      dailyActivity[date].totalPayment += parseMoney(op.payment);
-      dailyActivity[date].operations.push(op);
+      if (!op.date) return;
+      const day = op.date.split('T')[0];
+      if (!daily[day]) daily[day] = { count: 0, volume: 0 };
+      daily[day].count++;
+      daily[day].volume += parseMoney(op.payment);
     });
 
-    const dates = Object.keys(dailyActivity).sort();
-    if (dates.length < 3) return null;
-
-    // Простая эвристика: если сумма операций за день положительная — день роста, отрицательная — падения
-    // В реальном приложении нужно тянуть историю котировок, но для MVP достаточно payment-знака
+    const dates = Object.keys(daily);
     let growthDays = 0, fallDays = 0;
-    let growthVolume = 0, fallVolume = 0;
-
-    dates.forEach(date => {
-      const activity = dailyActivity[date];
-      if (activity.totalPayment >= 0) {
-        growthDays++;
-        growthVolume += activity.totalPayment;
-      } else {
-        fallDays++;
-        fallVolume += Math.abs(activity.totalPayment);
-      }
+    dates.forEach(d => {
+      if (daily[d].volume >= 0) growthDays++;
+      else fallDays++;
     });
 
-    // Средний результат в дни роста vs падения
-    const avgGrowthResult = growthDays > 0 ? growthVolume / growthDays : 0;
-    const avgFallResult = fallDays > 0 ? -fallVolume / fallDays : 0;
+    document.getElementById('checksGrowth').textContent = growthDays + ' дней';
+    document.getElementById('checksFall').textContent = fallDays + ' дней';
 
-    return {
-      growthDays,
-      fallDays,
-      avgGrowthResult,
-      avgFallResult,
-      totalDays: dates.length
-    };
+    if (dates.length >= 5) {
+      const ratio = fallDays / Math.max(growthDays, 1);
+      document.getElementById('checkingPatternFooter').innerHTML = ratio > 1.5
+        ? `Ты активнее в дни падения в <span class="hl">${ratio.toFixed(1)} раз</span>. Это эмоциональная реакция.`
+        : `Ты сохраняешь спокойствие в дни падения. Хороший признак.`;
+    } else {
+      document.getElementById('checkingPatternFooter').innerHTML = `Недостаточно данных. Нужно минимум <span class="hl">5 дней</span> с операциями.`;
+    }
   }
 
-  function renderCheckingPattern(pattern) {
-    const growthEl = document.getElementById('checksGrowth');
-    const fallEl = document.getElementById('checksFall');
-    const footerEl = document.getElementById('checkingPatternFooter');
+  // ============ РЕНДЕР ЖУРНАЛА ============
+  function renderJournal(operations) {
+    document.getElementById('journalTotalOps').textContent = operations.length;
 
-    if (!pattern) {
-      growthEl.textContent = '—';
-      fallEl.textContent = '—';
-      footerEl.innerHTML = 'Недостаточно данных для анализа. Нужно минимум 5 операций.';
+    const buys = operations.filter(op => op.type === 1 || op.type === 'OPERATION_TYPE_BUY');
+    const sells = operations.filter(op => op.type === 2 || op.type === 'OPERATION_TYPE_SELL');
+    const divs = operations.filter(op => op.type === 5 || op.type === 6 || op.type === 'OPERATION_TYPE_DIVIDEND' || op.type === 'OPERATION_TYPE_COUPON');
+
+    document.getElementById('journalBuys').textContent = buys.length;
+    document.getElementById('journalSells').textContent = sells.length;
+    document.getElementById('journalDividends').textContent = divs.length;
+
+    // Последние 10 операций
+    const sorted = [...operations].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 10);
+    const container = document.getElementById('journalList');
+
+    if (sorted.length === 0) {
+      container.innerHTML = `<div class="empty-state"><div class="icon">📖</div><div class="title">Нет операций</div><div class="desc">История пуста</div></div>`;
       return;
     }
 
-    growthEl.textContent = pattern.growthDays + ' раз';
-    fallEl.textContent = pattern.fallDays + ' раз';
+    container.innerHTML = sorted.map(op => {
+      const type = getOperationType(op.type);
+      const payment = parseMoney(op.payment);
+      const date = op.date ? new Date(op.date).toLocaleDateString('ru-RU') : '—';
+      const currency = op.payment?.currency === 'usd' ? '$' : '₽';
 
-    if (pattern.fallDays > pattern.growthDays * 1.5) {
-      footerEl.innerHTML = `Ты совершаешь сделки <span class="hl">в ${(pattern.fallDays / Math.max(pattern.growthDays, 1)).toFixed(1)} раз чаще</span> в дни падения.<br>Это классический признак эмоциональной реакции на просадку.`;
-    } else if (pattern.fallDays > pattern.growthDays) {
-      footerEl.innerHTML = `Ты немного чаще активен в дни падения.<br>Средний результат в такие дни: <span class="hl">${formatRub(pattern.avgFallResult)}</span>.`;
-    } else {
-      footerEl.innerHTML = `Ты сохраняешь спокойствие в дни падения. Это хороший признак.<br>Средний результат: <span class="hl">${formatRub(pattern.avgFallResult)}</span>.`;
-    }
+      const paymentClass = payment >= 0 ? 'green' : 'red';
+      const sign = payment >= 0 ? '+' : '';
+
+      return `
+        <div class="journal-item tappable fade-up">
+          <div class="journal-head">
+            <div class="journal-type">${type.label}</div>
+            <div class="journal-date">${date}</div>
+          </div>
+          <div class="journal-title">${op.figi || op.instrumentUid?.slice(0, 8) || '—'}</div>
+          <div class="journal-block">
+            <div class="lbl">Сумма</div>
+            <div class="txt ${paymentClass}">${sign}${formatRub(Math.abs(payment))}</div>
+          </div>
+        </div>
+      `;
+    }).join('');
   }
 
-  // ==== PORTFOLIO LOAD ====
+  function getOperationType(type) {
+    const types = {
+      1: { label: 'Покупка' },
+      2: { label: 'Продажа' },
+      5: { label: 'Дивиденды' },
+      6: { label: 'Купоны' },
+      7: { label: 'Налог' },
+      8: { label: 'Комиссия' },
+    };
+    return types[type] || { label: 'Операция' };
+  }
+
+  // ============ ИНСАЙТ ДНЯ ============
+  function renderInsight(operations) {
+    const now = new Date();
+    const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const recentOps = operations.filter(op => op.date && new Date(op.date) > monthAgo);
+
+    let insight = 'Загрузи токен на вкладке «Портфель», чтобы увидеть персональный инсайт.';
+
+    if (recentOps.length > 20) {
+      insight = `За последние 30 дней ты совершил <span class="insight-highlight">${recentOps.length} операций</span>. Средний инвестор — 12. Больше сделок ≠ лучше результат.`;
+    } else if (recentOps.length > 0) {
+      insight = `За последние 30 дней ты совершил <span class="insight-highlight">${recentOps.length} операций</span>. Это в пределах разумного.`;
+    } else if (operations.length > 0) {
+      insight = `За последние 30 дней ты не совершал операций. Это признак дисциплины.`;
+    }
+
+    document.getElementById('insightText').innerHTML = insight;
+  }
+
+  // ============ ОСНОВНАЯ ФУНКЦИЯ ЗАГРУЗКИ ============
   async function loadPortfolio() {
     const token = document.getElementById('tokenInput').value.trim();
     const status = document.getElementById('tokenStatus');
@@ -813,6 +872,7 @@
       return;
     }
 
+    state.token = token;
     status.className = 'token-status loading';
     status.textContent = 'Загружаю счета...';
     btn.disabled = true;
@@ -824,9 +884,11 @@
       if (accounts.length === 0) throw new Error('Не найдено ни одного счёта');
 
       const account = accounts.find(a => a.status === 1) || accounts[0];
+      state.account = account;
       status.textContent = `Загружаю портфель "${account.name}"...`;
 
       const portfolio = await apiCall(token, 'tinkoff.public.invest.api.contract.v1.OperationsService', 'GetPortfolio', { accountId: account.id });
+      state.portfolio = portfolio;
 
       status.textContent = 'Загружаю историю операций...';
       const operationsData = await apiCall(token, 'tinkoff.public.invest.api.contract.v1.OperationsService', 'GetOperations', {
@@ -834,23 +896,29 @@
         from: '2024-01-01T00:00:00Z',
         to: '2026-12-31T23:59:59Z'
       });
+      state.operations = operationsData.operations || [];
 
       status.className = 'token-status ok';
-      status.textContent = '✓ Портфель и операции загружены';
+      status.textContent = `✓ Загружено: ${state.operations.length} операций`;
 
-      renderPortfolio(portfolio, account, operationsData);
+      // Считаем общую стоимость
+      state.totalValue = parseMoney(portfolio.totalAmountShares);
+
+      // Рендерим все разделы
+      renderPortfolio(portfolio, account);
+      renderPath();
+      renderTax(calculateTax(state.operations));
+      renderMirror(state.operations);
+      renderJournal(state.operations);
+      renderInsight(state.operations);
+
       summary.style.display = 'block';
 
       document.getElementById('connectionStatus').textContent = '● Подключено';
       document.getElementById('connectionStatus').style.color = 'var(--accent-green)';
-
-      // Обновить налоги
-      const taxData = calculateTax(operationsData.operations || [], portfolio);
-      renderTax(taxData);
-
-      // Обновить поведенческий анализ
-      const pattern = analyzeCheckingPattern(operationsData.operations || [], null);
-      renderCheckingPattern(pattern);
+      document.getElementById('goal1Share').textContent = Math.min((state.totalValue / GOAL) * 100, 100).toFixed(0) + '%';
+      document.getElementById('goal1Bar').style.width = Math.min((state.totalValue / GOAL) * 100, 100) + '%';
+      document.getElementById('goal1Note').textContent = `${formatRub(state.totalValue)} из ${formatRub(GOAL)}`;
 
     } catch (err) {
       status.className = 'token-status error';
@@ -861,16 +929,18 @@
     }
   }
 
-  function renderPortfolio(portfolio, account, operationsData) {
+  function renderPortfolio(portfolio, account) {
     const positions = portfolio.positions || [];
     const totalValue = parseMoney(portfolio.totalAmountShares);
+    const investedValue = positions.reduce((sum, p) => sum + parseMoney(p.averagePositionPrice) * parseMoney(p.quantity), 0);
+    const totalReturn = investedValue > 0 ? ((totalValue - investedValue) / investedValue) * 100 : 0;
 
     document.getElementById('totalValue').textContent = formatRub(totalValue);
+    document.getElementById('investedValue').textContent = formatRub(investedValue);
+    document.getElementById('totalReturn').textContent = formatPercent(totalReturn);
+    document.getElementById('totalReturn').className = 'val ' + (totalReturn >= 0 ? 'green' : 'red');
     document.getElementById('positionsCount').textContent = positions.length;
-    document.getElementById('accountName').textContent = account.name || 'Основной';
     document.getElementById('portfolioSubtitle').textContent = formatRub(totalValue) + ' · ' + positions.length + ' позиций';
-
-    animateGoal(totalValue);
 
     const container = document.getElementById('positionsList');
     container.innerHTML = '';
@@ -885,11 +955,8 @@
       let note = '✓ В норме для твоей цели';
       let noteClass = '';
 
-      if (share > 25) {
-        badgeClass = 'red'; note = '⚠️ Концентрация критическая · риск для цели'; noteClass = 'danger';
-      } else if (share > 15) {
-        badgeClass = 'yellow'; note = '⚠️ Концентрация выше комфортной'; noteClass = 'warn';
-      }
+      if (share > 25) { badgeClass = 'red'; note = '⚠️ Концентрация критическая'; noteClass = 'danger'; }
+      else if (share > 15) { badgeClass = 'yellow'; note = '⚠️ Концентрация выше комфортной'; noteClass = 'warn'; }
 
       const card = document.createElement('div');
       card.className = 'position-card tappable fade-up';
