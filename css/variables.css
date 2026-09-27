@@ -1,0 +1,43 @@
+:root {
+  /* Фоны */
+  --bg-deep: #F5F5F7;
+  --bg-card: rgba(255, 255, 255, 0.75);
+  --bg-card-solid: #FFFFFF;
+  --bg-card-hover: rgba(255, 255, 255, 0.95);
+
+  /* Границы */
+  --border-subtle: rgba(0, 0, 0, 0.06);
+  --border-medium: rgba(0, 0, 0, 0.10);
+
+  /* Текст */
+  --text-primary: #1D1D1F;
+  --text-secondary: rgba(29, 29, 31, 0.62);
+  --text-tertiary: rgba(29, 29, 31, 0.38);
+
+  /* Акценты */
+  --accent-blue: #0071E3;
+  --accent-blue-soft: rgba(0, 113, 227, 0.10);
+  --accent-teal: #0A9B8E;
+  --accent-green: #1EA85A;
+  --accent-green-soft: rgba(30, 168, 90, 0.10);
+  --accent-red: #E0362E;
+  --accent-red-soft: rgba(224, 54, 46, 0.10);
+  --accent-yellow: #C77D00;
+  --accent-purple: #7B5BD6;
+  --accent-purple-soft: rgba(123, 91, 214, 0.10);
+
+  /* Бейдж ALFA */
+  --badge-alfa-bg: rgba(123, 91, 214, 0.12);
+  --badge-alfa-text: #7B5BD6;
+  --badge-alfa-border: rgba(123, 91, 214, 0.20);
+
+  /* Геометрия */
+  --blur-strength: 40px;
+  --radius-lg: 22px;
+  --radius-md: 16px;
+  --radius-sm: 12px;
+
+  /* Тени */
+  --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.03);
+  --shadow-hover: 0 4px 20px rgba(0, 0, 0, 0.06), 0 2px 6px rgba(0, 0, 0, 0.04);
+}
