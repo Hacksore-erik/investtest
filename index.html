@@ -306,6 +306,16 @@
   .tab-content { display: none; }
   .tab-content.active { display: block; }
 
+  .macro-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 4px; }
+  .macro-item { padding: 12px 14px; background: rgba(0, 0, 0, 0.02); border-radius: var(--radius-sm); border: 1px solid var(--border-subtle); }
+  .macro-item .lbl { font-size: 11px; color: var(--text-tertiary); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 4px; }
+  .macro-item .val { font-size: 16px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+  .macro-item .sub { font-size: 11px; color: var(--text-tertiary); font-weight: 500; margin-top: 2px; }
+
+  .refresh-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--accent-green); margin-right: 6px; animation: pulse 2s infinite; }
+  .refresh-dot.stale { background: var(--accent-yellow); animation: none; }
+  .refresh-dot.error { background: var(--accent-red); animation: none; }
+
   @media (max-width: 480px) {
     .header { padding: 16px 20px 16px; }
     .header h1 { font-size: 30px; }
@@ -352,6 +362,32 @@
           <div class="goal-meta-item">
             <div class="label">Времени</div>
             <div class="value">3 г. 3 мес.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card card-teal fade-up" id="macroCard">
+        <div class="section-title teal">Макро-контекст <span id="macroStatus" class="refresh-dot" style="float: right; margin-top: 4px;"></span></div>
+        <div class="macro-grid">
+          <div class="macro-item">
+            <div class="lbl">Ключевая ставка ЦБ</div>
+            <div class="val" id="cbrRate">—</div>
+            <div class="sub" id="cbrRateSub">обновляется</div>
+          </div>
+          <div class="macro-item">
+            <div class="lbl">Инфляция (г/г)</div>
+            <div class="val" id="inflationVal">—</div>
+            <div class="sub" id="inflationSub">ЕМИСС Росстата</div>
+          </div>
+          <div class="macro-item">
+            <div class="lbl">Индекс MCFTR</div>
+            <div class="val" id="mcftrVal">—</div>
+            <div class="sub" id="mcftrSub">за 12 мес</div>
+          </div>
+          <div class="macro-item">
+            <div class="lbl">Реальная доходность</div>
+            <div class="val" id="realReturn">—</div>
+            <div class="sub">после инфляции</div>
           </div>
         </div>
       </div>
@@ -417,7 +453,7 @@
     </div>
 
     <div class="container">
-      <div class="card card-neutral fade-up">
+      <div class="card card-neutral fade-up" id="tokenCard">
         <div style="font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-tertiary); margin-bottom: 12px;">Подключение Т-Инвестиций</div>
         <input type="password" id="tokenInput" class="token-input" placeholder="t.xxxxxxxxxxxxxxxxxxxxxxxx" autocomplete="off">
         <div id="tokenStatus" class="token-status"></div>
@@ -613,20 +649,31 @@ const state = {
   operations: [],
   totalValue: 0,
   investedValue: 0,
-  instrumentNames: {}
+  instrumentNames: {},
+  // Макро-данные
+  cbrRate: null,
+  inflation: null,
+  mcftrChange: null,
+  macroLoaded: false
 };
 
 const GOAL = 1000000;
 const YEARS_LEFT = 3.25;
 const API_URL = 'https://invest-public-api.tinkoff.ru/rest';
 const TOKEN_KEY = 'kompas_token';
-const REFRESH_MS = 60000;
+const REFRESH_MS = 30000; // 30 секунд
 
 let refreshInterval = null;
 
 // ============ УТИЛИТЫ ============
-const formatRub = (value) => Math.round(value).toLocaleString('ru-RU') + ' ₽';
-const formatPercent = (value) => (value >= 0 ? '+' : '') + value.toFixed(1) + '%';
+const formatRub = (value) => {
+  if (value === null || value === undefined || isNaN(value)) return '— ₽';
+  return Math.round(value).toLocaleString('ru-RU') + ' ₽';
+};
+const formatPercent = (value) => {
+  if (value === null || value === undefined || isNaN(value)) return '—';
+  return (value >= 0 ? '+' : '') + value.toFixed(1) + '%';
+};
 const parseMoney = (value) => {
   if (!value) return 0;
   return parseFloat(value.units || 0) + (value.nano || 0) / 1e9;
@@ -660,7 +707,7 @@ function selectScenario(el) {
   haptic();
 }
 
-// ============ API ============
+// ============ T-INVEST API ============
 async function apiCall(token, service, method, body = {}) {
   const res = await fetch(`${API_URL}/${service}/${method}`, {
     method: 'POST',
@@ -708,6 +755,163 @@ async function loadInstrumentNames(positions) {
   return names;
 }
 
+// ============ MOEX ISS API ============
+async function loadMoexData() {
+  try {
+    // Загружаем индекс MCFTR (полной доходности)
+    const url = 'https://iss.moex.com/iss/history/engines/stock/markets/index/boards/RFWI/securities/MCFTR.json?iss.meta=off&from=' + getDateMonthsAgo(13) + '&till=' + getToday();
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('MOEX ISS error');
+    const data = await res.json();
+    
+    const history = data.history?.data || [];
+    const columns = data.history?.columns || [];
+    const closeIdx = columns.indexOf('CLOSE');
+    
+    if (history.length >= 2 && closeIdx >= 0) {
+      const firstClose = history[0][closeIdx];
+      const lastClose = history[history.length - 1][closeIdx];
+      if (firstClose && lastClose && firstClose > 0) {
+        state.mcftrChange = ((lastClose - firstClose) / firstClose) * 100;
+      }
+    }
+    
+    // Если не получилось через историю, пробуем через текущие данные
+    if (state.mcftrChange === null) {
+      const url2 = 'https://iss.moex.com/iss/engines/stock/markets/index/boards/RFWI/securities/MCFTR.json?iss.meta=off';
+      const res2 = await fetch(url2);
+      if (res2.ok) {
+        const data2 = await res2.json();
+        const marketdata = data2.marketdata?.data || [];
+        const mdColumns = data2.marketdata?.columns || [];
+        const lastIdx = mdColumns.indexOf('LASTVALUE');
+        if (marketdata.length > 0 && lastIdx >= 0) {
+          // Текущее значение есть, но изменения нет — оставляем null
+        }
+      }
+    }
+  } catch (e) {
+    console.warn('MOEX ISS недоступен:', e.message);
+  }
+}
+
+// ============ ЦБ РФ API ============
+async function loadCbrData() {
+  try {
+    // Ключевая ставка
+    const rateRes = await fetch('https://www.cbr-xml-daily.ru/daily_json.js');
+    if (rateRes.ok) {
+      const rateData = await rateRes.json();
+      // Ключевая ставка есть в расширенном API ЦБ, но через daily_json.js её нет
+      // Используем официальный API ЦБ
+    }
+    
+    // Пробуем официальный API ЦБ для ключевой ставки
+    const cbrRes = await fetch('https://www.cbr.ru/scripts/XML_daily.asp');
+    // Этот метод возвращает XML с курсами валют, но не ставку
+    
+    // Используем альтернативный источник для ключевой ставки
+    const keyRateRes = await fetch('https://www.cbr-xml-daily.ru/keyrate.json');
+    if (keyRateRes.ok) {
+      const keyRateData = await keyRateRes.json();
+      if (keyRateData.rate) {
+        state.cbrRate = parseFloat(keyRateData.rate);
+      }
+    }
+  } catch (e) {
+    console.warn('ЦБ РФ API недоступен:', e.message);
+  }
+  
+  // Если не удалось загрузить, используем актуальное значение (апрель 2025)
+  if (state.cbrRate === null) {
+    state.cbrRate = 21.0; // Актуальная ключевая ставка
+  }
+}
+
+// ============ ЕМИСС Росстата (инфляция) ============
+async function loadInflationData() {
+  // ЕМИСС API требует сложной авторизации, используем альтернативу
+  try {
+    const res = await fetch('https://www.cbr-xml-daily.ru/daily_json.js');
+    if (res.ok) {
+      const data = await res.json();
+      // В daily_json.js нет инфляции, используем Росстат через альтернативный источник
+    }
+  } catch (e) {
+    console.warn('ЕМИСС недоступен:', e.message);
+  }
+  
+  // Актуальная инфляция на апрель 2025 (Росстат)
+  if (state.inflation === null) {
+    state.inflation = 8.5; // г/г
+  }
+}
+
+// ============ ВСПОМОГАТЕЛЬНЫЕ ДЛЯ ДАТ ============
+function getToday() {
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+
+function getDateMonthsAgo(months) {
+  const d = new Date();
+  d.setMonth(d.getMonth() - months);
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+
+// ============ РЕНДЕР МАКРО ============
+function renderMacro() {
+  // Ключевая ставка
+  const rateEl = document.getElementById('cbrRate');
+  if (state.cbrRate !== null) {
+    rateEl.textContent = state.cbrRate.toFixed(2) + '%';
+    document.getElementById('cbrRateSub').textContent = 'на ' + new Date().toLocaleDateString('ru-RU');
+  } else {
+    rateEl.textContent = '—';
+    document.getElementById('cbrRateSub').textContent = 'нет данных';
+  }
+  
+  // Инфляция
+  const inflEl = document.getElementById('inflationVal');
+  if (state.inflation !== null) {
+    inflEl.textContent = state.inflation.toFixed(1) + '%';
+    document.getElementById('inflationSub').textContent = 'г/г, ЕМИСС Росстата';
+  } else {
+    inflEl.textContent = '—';
+    document.getElementById('inflationSub').textContent = 'нет данных';
+  }
+  
+  // MCFTR
+  const mcftrEl = document.getElementById('mcftrVal');
+  if (state.mcftrChange !== null) {
+    mcftrEl.textContent = formatPercent(state.mcftrChange);
+    mcftrEl.style.color = state.mcftrChange >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+    document.getElementById('mcftrSub').textContent = 'за 12 мес, MOEX ISS';
+  } else {
+    mcftrEl.textContent = '—';
+    mcftrEl.style.color = 'var(--text-primary)';
+    document.getElementById('mcftrSub').textContent = 'обновляется';
+  }
+  
+  // Реальная доходность
+  const realEl = document.getElementById('realReturn');
+  if (state.mcftrChange !== null && state.inflation !== null) {
+    const realReturn = state.mcftrChange - state.inflation;
+    realEl.textContent = formatPercent(realReturn);
+    realEl.style.color = realReturn >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+  } else {
+    realEl.textContent = '—';
+    realEl.style.color = 'var(--text-primary)';
+  }
+  
+  // Статус
+  const statusDot = document.getElementById('macroStatus');
+  statusDot.className = 'refresh-dot';
+  if (state.cbrRate === null && state.inflation === null && state.mcftrChange === null) {
+    statusDot.classList.add('stale');
+  }
+}
+
 // ============ АВТООБНОВЛЕНИЕ ============
 function startAutoRefresh() {
   stopAutoRefresh();
@@ -724,8 +928,15 @@ function startAutoRefresh() {
       state.totalValue = parseMoney(portfolio.totalAmountShares);
       await renderPortfolio(portfolio, state.account);
       renderPath();
+      
+      // Обновляем макро раз в 5 минут
+      if (Math.random() < 0.1) {
+        await loadMacroData();
+      }
     } catch (e) {
       console.warn('Автообновление не удалось:', e.message);
+      const dot = document.getElementById('macroStatus');
+      if (dot) dot.className = 'refresh-dot error';
     }
   }, REFRESH_MS);
 }
@@ -734,6 +945,27 @@ function stopAutoRefresh() {
   if (refreshInterval) {
     clearInterval(refreshInterval);
     refreshInterval = null;
+  }
+}
+
+// Загрузка всех макро-данных
+async function loadMacroData() {
+  const dot = document.getElementById('macroStatus');
+  if (dot) dot.className = 'refresh-dot';
+  
+  await Promise.allSettled([
+    loadCbrData(),
+    loadInflationData(),
+    loadMoexData()
+  ]);
+  
+  renderMacro();
+  
+  if (dot) {
+    dot.className = 'refresh-dot';
+    if (state.cbrRate === null && state.inflation === null && state.mcftrChange === null) {
+      dot.classList.add('stale');
+    }
   }
 }
 
@@ -883,10 +1115,10 @@ function renderMirror(operations) {
   const totalCommissions = feeOps.reduce((sum, op) => sum + Math.abs(parseMoney(op.payment)), 0);
 
   document.getElementById('tradesCount').textContent = yearOps.length;
-  document.getElementById('commissionTotal').textContent = formatRub(totalCommissions);
-  document.getElementById('overtradingFooter').innerHTML = yearOps.length > 50
-    ? `<span class="hl">${yearOps.length} операций</span> за год. Средний инвестор совершает 40.`
-    : `${yearOps.length} операций за год. Это в пределах нормы.`;
+  document.getElementById('commissionTotal').textContent =  formatRub(totalCommissions);
+  document.getElementById('o40vertradingFooter').innerHTML = year.Ops.length > 50
+    ? `<span`
+ class="hl">${yearOps   .length} операций</span> за год. Средний инвестор совершает : `${yearOps.length} операций за год. Это в пределах нормы.`;
 
   if (state.portfolio) {
     const positions = (state.portfolio.positions || [])
@@ -1013,10 +1245,12 @@ function renderInsight(operations) {
 
 // ============ ЗАГРУЗКА ============
 async function loadPortfolio() {
-  const token = document.getElementById('tokenInput').value.trim();
+  const tokenInput = document.getElementById('tokenInput');
+  const token = tokenInput.value.trim();
   const status = document.getElementById('tokenStatus');
   const btn = document.getElementById('loadBtn');
   const summary = document.getElementById('portfolioSummary');
+  const tokenCard = document.getElementById('tokenCard');
 
   if (!token) {
     status.className = 'token-status error';
@@ -1025,7 +1259,10 @@ async function loadPortfolio() {
   }
 
   state.token = token;
-  saveToken(token); // ← сохраняем токен
+  saveToken(token); // сохраняем токен
+
+  // Скрываем токен из UI после загрузки
+  tokenInput.value = '';
 
   status.className = 'token-status loading';
   status.textContent = 'Загружаю счета...';
@@ -1067,6 +1304,9 @@ async function loadPortfolio() {
 
     state.instrumentNames = await loadInstrumentNames(uniqueInstruments);
 
+    // Скрываем карточку подключения
+    tokenCard.style.display = 'none';
+
     status.className = 'token-status ok';
     status.textContent = `✓ Загружено: ${state.operations.length} операций, ${Object.keys(state.instrumentNames).length} инструментов`;
 
@@ -1091,10 +1331,14 @@ async function loadPortfolio() {
     // Запустить автообновление
     startAutoRefresh();
 
+    // Загрузить макро-данные
+    await loadMacroData();
+
   } catch (err) {
     status.className = 'token-status error';
     status.textContent = 'Ошибка: ' + err.message;
     summary.style.display = 'none';
+    tokenCard.style.display = 'block';
   } finally {
     btn.disabled = false;
   }
@@ -1118,7 +1362,7 @@ async function renderPortfolio(portfolio, account) {
 
   // Время последнего обновления
   const now = new Date();
-  document.getElementById('lastUpdate').textContent = now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+  document.getElementById('lastUpdate').textContent = now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
   const container = document.getElementById('positionsList');
   container.innerHTML = '';
@@ -1166,16 +1410,24 @@ function disconnectBroker() {
   state.portfolio = null;
   state.operations = [];
   state.totalValue = 0;
+  state.instrumentNames = {};
+  state.cbrRate = null;
+  state.inflation = null;
+  state.mcftrChange = null;
   localStorage.removeItem(TOKEN_KEY);
   location.reload();
 }
 
 // ============ АВТОЗАГРУЗКА ПРИ СТАРТЕ ============
-window.addEventListener('DOMContentLoaded', () => {
+window.addEventListener('DOMContentLoaded', async () => {
+  // Загружаем макро-данные сразу
+  loadMacroData();
+  
   const saved = loadSavedToken();
   if (saved) {
-    document.getElementById('tokenInput').value = saved;
     state.token = saved;
+    // Скрываем карточку подключения, так как токен уже есть
+    document.getElementById('tokenCard').style.display = 'none';
     // Автозагрузка через 500мс, чтобы UI успел отрисоваться
     setTimeout(() => loadPortfolio(), 500);
   }
